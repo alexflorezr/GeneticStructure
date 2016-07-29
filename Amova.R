@@ -19,4 +19,7 @@ temp_structure <- as.data.frame(colnames(temp_samples), stringsAsFactors=F)
 colnames(temp_structure) <- "Biomes"
 temp_structure$Biomes <- ifelse(as.numeric(temp_structure$Biomes) <= 16, "bio_tens", "bio_twenties")
 ### amova
-temp_amova <- amova(temp_samples_df, sqrt(temp_dist), temp_structure)
+colSums(temp_samples_df[1:7,])
+temp_amova <- amova(temp_samples_df, new_dist, temp_structure)
+temp_dist[which(temp_dist == 0)] <- 0.011713031 
+new_dist <- dist(temp_dist)
