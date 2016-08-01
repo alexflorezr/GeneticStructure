@@ -1,6 +1,6 @@
 rm(list=ls())
 setwd()
-Dataset <- read.delim(file="~/Desktop/PhD/Thesis/Raw_data/Clean_database/DATABASE_16-06-16.txt", sep = "\t", stringsAsFactors = F)
+Dataset2 <- read.delim(file="~/Desktop/PhD/Thesis/Raw_data/Clean_database/DATABASE_16-06-16.txt", sep = "\t", stringsAsFactors = F)
 Species <- unique(Dataset$Species)
 Bins <- c(15000, 25000, 50000)
 seqs_per_bin <- as.data.frame(matrix(data=as.numeric(), nrow = length(Species), ncol = length(Bins)))
