@@ -5,6 +5,7 @@ Bio <- stack(dir())
 ### Biomes using Koppen
 setwd("/Users/afr/Desktop/3rd_chapter/Ch3_data/Kop50k/")
 Kop <- stack(dir())
+
 #### The function: Start
 ch3_data.frame <- function(Dataset, Bio, Kop){
         require(raster)
@@ -34,6 +35,7 @@ ch3_data.frame <- function(Dataset, Bio, Kop){
         return(temp_points_hap_DB)
 }
 #### The function: End
+
 ch3_seq_data_frame <- ch3_data.frame(ch3_database, Bio = Bio, Kop = Kop)
 ### SAFETY POINT >>> save the data frame to not run the script again and make a copy in the R environment
 ch3_seq_data_frame <- ch3_seq_data_frame[-which(is.na(ch3_seq_data_frame$Kopp)),]
@@ -44,6 +46,8 @@ ch3_seq_data_frame <- ch3_seq_data_frame[-which(is.na(ch3_seq_data_frame$Bio4)),
 ### replace -1000 values in Bio4 by 0
 ch3_seq_data_frame$Bio4[which(ch3_seq_data_frame$Bio4 == -1000)] <- 0
 ### Subsetting the data in time periods (preLGM, LGM, posLGM) and in seq anf fossil
+
+#### The function: Start
 ch3_seq_biome.barplot <- function(ch3_data_frame, Bio, Kop){
         for (species in seq_along(unique(ch3_data_frame$Species))){
                 Vspecies <- unique(ch3_data_frame$Species)
@@ -204,9 +208,13 @@ ch3_seq_biome.barplot <- function(ch3_data_frame, Bio, Kop){
                 dev.off()
         }
 }
+#### The function: End
+
 ch3_seq_biome.barplot(ch3_data_frame =ch3_data_frame, Bio = Bio, Kop = Kop)
 ### create fasta files from the ch3_data_frame
 setwd("/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_fasta/")
+
+#### The function: Start
 ch3_fasta.files <- function(ch3_data_frame){
         require(seqinr)
         for (species in seq_along(unique(ch3_data_frame$Species))){
@@ -218,9 +226,12 @@ ch3_fasta.files <- function(ch3_data_frame){
                 write.table(temp_seq_sp, file=paste(sp, "bio_kop_df.txt", sep=""), sep="\t", row.names = F)
         }
 }
+#### The function: End
 ch3_fasta.files(ch3_data_frame =ch3_data_frame)
+
 ### Function to assign haplotypes to Biomes
 "/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_fasta_clean/"
+#### The function: Start
 ch3_assing.hap <- function(directory){
         require(ape)
         setwd(directory)
@@ -254,9 +265,13 @@ ch3_assing.hap <- function(directory){
                         "Wrong df and fasta matching"
                 }
         }
-}  
+} 
+#### The function: End
 ch3_assing.hap("/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_fasta_clean/")
+
+
 ### Function for the map for all the species
+#### The function: Start
 ch3_maps.plot <- function(ch3_hap_bio_kop){
         require(stringr)
         require(maps)
@@ -287,10 +302,13 @@ ch3_maps.plot <- function(ch3_hap_bio_kop){
                 col=c("#8B735599","#87CEFA99", "#698B2299"), bty = "n", pt.cex = 2, pt.lwd = 3, title="Time period", title.adj = c(0,0), y.intersp = 1, x.intersp = 0.5)
         dev.off()
 }
+#### The function: End
 for(file in dir(pattern = "kop.txt")){
         ch3_maps.plot(file)
 }
+
 ### Function to plot the haplotypes per biome per time period (using Koppen)
+#### The function: Start
 ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
         require(stringr)
         hap_bio_kop_data <- read.table(ch3_hap_bio_kop, header=T, stringsAsFactors = F)
@@ -366,11 +384,153 @@ ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
         axis(side=2, at=breaks, labels = breaks,las=2)
         dev.off()
 }
+#### The function: Start
 setwd("/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_fasta_clean")
 for(file in dir(pattern = "kop.txt")){
         ch3_hap_kopp.barplot(file)
 }
+
+### function to estimate the fst among time periods
+ch3_periods.fst <- function(directory){
+        data_files <- dir(pattern = "df.txt")
+        fasta_files <- dir(pattern = "clean.fasta")
+        for(files in seq_along(data_files)){
+                sp_data <- strsplit(data_files[files], split = "_")[[1]][1]
+                sp_fasta <- strsplit(fasta_files[files], split = "_")[[1]][1]
+                if(sp_data == sp_fasta){
+                ch3_periods_data_fst <- data_files[files]
+                ch3_periods_fasta_fst <- fasta_files[files]
+        ### output data frame for periods overall
+        temp_out_diff_overall <- as.data.frame(matrix(ncol=4, nrow = 0))
+        colnames(temp_out_diff_overall) <- c("sp","diff_metric","estimate","p.val") 
+        ### output data frame for periods pairwise
+        temp_out_diff_pairwise <- as.data.frame(matrix(ncol=12, nrow = 0))
+        colnames(temp_out_diff_pairwise) <-  c("sp","pair.label","strata.1","strata.2","n.1","n.2","Fst","Fst.p.val","PHIst","PHIst.p.val","Chi2","Chi2.p.val")
+        ### output data frame for nucleotide divergence within
+        temp_out_div_within <- as.data.frame(matrix(ncol=8, nrow = 0))
+        colnames(temp_out_div_within) <-  c("sp","period","mean","pct.0","pct.0.025","pct.0.5","pct.0.975","pct.1")
+        ### output data frame for nucleotide divergence between
+        temp_out_div_between <- as.data.frame(matrix(ncol=10, nrow = 0))
+        colnames(temp_out_div_between) <-  c("sp" ,"strata.1", "strata.2","dA","mean","pct.0","pct.0.025","pct.0.5","pct.0.975","pct.1")
+        Periods<- c("pre_LGM", "LGM", "pos_LGM")
+        temp_sp_kop_data <- read.table(ch3_periods_data_fst, header=T, stringsAsFactors = F)
+        temp_sp_kop_data$Period[which(temp_sp_kop_data$Time_bin > 25000)] <- Periods[1]
+        temp_sp_kop_data$Period[which(temp_sp_kop_data$Time_bin <= 25000 & temp_sp_kop_data$Time_bin > 15000)] <- Periods[2]
+        temp_sp_kop_data$Period[which(temp_sp_kop_data$Time_bin <= 15000)] <- Periods[3]
+        ### temp_align_clean <- read.fasta("Bs_align_clean.fasta")
+        temp_align_clean  <- read.dna(ch3_periods_fasta_fst, format = "fasta", as.character = FALSE, as.matrix=NULL)
+        temp_sp_kop_data <- temp_sp_kop_data[as.numeric(unlist(temp_split)[c((seq(1, length(labels(temp_align_clean)), by=1) *5)-3)]),]
+        temp_sp_kop_data$UniqueInd <- labels(temp_align_clean)
+        sp <- strsplit(ch3_periods_data_fst, split = "_")[[1]][1]
+        haps_period <- FindHaplo(align = temp_align_clean)
+        haps_period <- as.data.frame(haps_period)
+        colnames(haps_period) <-c("UniqueInd", "haplotype")
+        temp_data_stats <- temp_sp_kop_data
+        matched <- match(haps_period$UniqueInd, temp_data_stats$UniqueInd)
+        temp_data_stats <- temp_data_stats[matched,]
+        temp_haps_time_Kopp <- cbind(temp_data_stats, haps_period)
+        ### add a column to specify the biome group
+        sp_haps_period <-GetHaplo(align = temp_align_clean, saveFile=T, outname=paste(sp,"_periods_fst",".fasta", sep=""), format="fasta", seqsNames="Inf.Hap") #haps are now a DNAbin
+        sp_ghaps_period <-read.fasta(paste(sp,"_periods_fst",".fasta", sep="")) #imports haps as gtypes
+        sp_gtype_period <- gtypes(gen.data=data.frame(temp_haps_time_Kopp$UniqueInd,temp_haps_time_Kopp$Period,temp_haps_time_Kopp$haplotype),id.col=1,strata.col=2,locus.col=3,dna.seq=sp_ghaps_period)
+        ### Estimate the genetic parameters       
+        temp_periods_diff <- pop.diff.test(sp_gtype_period)
+                ### output for diff overall
+                temp_sp_periods_overall <- as.data.frame(cbind(sp, rownames(temp_periods_diff$overall$result), temp_periods_diff$overall$result))
+                colnames(temp_sp_periods_overall)[2] <- "diff_metric"
+                temp_out_diff_overall <- rbind(temp_out_diff_pairwise,temp_sp_periods_overall)
+                ### output for diff pairwise
+                temp_sp_periods_pairwise <- cbind(sp,temp_periods_diff$pairwise$result)                                   
+                temp_out_diff_pairwise <- rbind(temp_out_diff_pairwise,temp_sp_periods_pairwise)
+        #Nucleotide divergence
+                temp_nuc_divergence_all <- nucleotide.divergence(sp_gtype_period)
+                ### within
+                temp_nuc_within <- as.data.frame(cbind(row.names(temp_nuc_divergence_all$within), temp_nuc_divergence_all$within), row.names = F)
+                colnames(temp_nuc_within)[1] <- "period"
+                temp_out_div_within <- rbind(temp_out_div_within,cbind(sp,temp_nuc_within))
+                ### between
+                temp_nuc_between <- as.data.frame(cbind(sp, temp_nuc_divergence_all$between))
+                temp_out_div_between <- rbind(temp_out_div_between,cbind(sp,temp_nuc_between))
+                }else{
+                print("The data files do not match the fasta files")
+                }
+        }
+        setwd("/Users/afr/Desktop/")
+        write.table(temp_out_diff_overall, file = "ch3_diff_overall.txt", sep="\t", row.names = F)
+        write.table(temp_out_diff_pairwise, file = "ch3_diff_pairwise.txt", sep="\t", row.names = F)
+        write.table(temp_out_div_within, file = "ch3_div_within.txt", sep="\t", row.names = F)
+        write.table(temp_out_div_between, file = "ch3_div_between.txt", sep="\t", row.names = F)
+}
+ch3_periods.fst("/Users/afr/Desktop/Ch3_fst_period_data/")
+
+
+
+
+
+
+
 ### function to estimate the fst values using biomes as categories 
+ch3_kopp_lower.fst <- function(){
+Periods<- c("pre_LGM", "LGM", "pos_LGM")
+temp_sp_kop_data <- read.table("Bs_bio_kop_df.txt", header=T, stringsAsFactors = F)
+temp_sp_kop_data$Period[which(temp_sp_kop_data$Time_bin > 25000)] <- Periods[1]
+temp_sp_kop_data$Period[which(temp_sp_kop_data$Time_bin <= 25000 & temp_sp_kop_data$Time_bin > 15000)] <- Periods[2]
+temp_sp_kop_data$Period[which(temp_sp_kop_data$Time_bin <= 15000)] <- Periods[3]
+### temp_align_clean <- read.fasta("Bs_align_clean.fasta")
+temp_align_clean  <- read.dna("Bs_align_clean.fasta", format = "fasta", as.character = FALSE, as.matrix=NULL)
+temp_sp_kop_data <- temp_sp_kop_data[as.numeric(unlist(temp_split)[c((seq(1, length(labels(temp_align_clean)), by=1) *5)-3)]),]
+temp_sp_kop_data$UniqueInd <- labels(temp_align_clean)
+sp <- strsplit("Bs_bio_kop_df.txt", split = "_")[[1]][1]
+
+for(period in seq_along(Periods)){
+        temp_fasta_stats_period <- temp_align_clean[which(temp_sp_kop_data$Period == Periods[period]),]
+        haps_period <- FindHaplo(align = temp_fasta_stats_period)
+        haps_period <- as.data.frame(haps_period)
+        colnames(haps_period) <-c("UniqueInd", "haplotype")
+        haps_period$UniqueInd <- levels(haps_period$UniqueInd)
+        temp_data_stats_period <- temp_sp_kop_data[temp_sp_kop_data$Period == Periods[period],]
+        matched <- match(haps_period$UniqueInd, temp_data_stats_period$UniqueInd)
+        temp_data_stats_period_m <- temp_data_stats_period[matched,]
+        temp_haps_time_bio_period <- cbind(temp_data_stats_period_m, haps_period)
+        ### add a column to specify the biome group
+        temp<- as.alignment(as.DNAbin(temp_fasta_stats_period))
+        sp_haps_period <-GetHaplo(align = temp_fasta_stats_period, saveFile=T, outname=paste(sp,"_Pops_",  Periods[period],".fasta", sep=""), format="fasta", seqsNames="Inf.Hap") #haps are now a DNAbin
+        sp_ghaps_period <-read.fasta(paste(sp,"_Pops_",  Periods[period],".fasta", sep="")) #imports haps as gtypes
+        sp_gtype_period <- gtypes(gen.data=data.frame(temp_haps_time_bio_period$UniqueInd,temp_haps_time_bio_period$Kopp,temp_haps_time_bio_period$haplotype),id.col=1,strata.col=2,locus.col=3,dna.seq=sp_ghaps_period)
+}
+if (pop_diff == TRUE){
+        temp_pop_all <- pop.diff.test(sp_gtype)
+        temp_pop_diff <-pop.diff.test(sp_gtype_period)
+        #FST
+        temp_FST <- as.vector(temp_pop_diff$overall$result[1,])
+        temp_FST_all <- as.vector(temp_pop_all$overall$result[1,])
+        #Fi-st
+        temp_phist <- as.vector(temp_pop_diff$overall$result[2,])
+        #chi squared
+        Temp_chi2 <-  as.vector(temp_pop_diff$overall$result[3,])
+        #Fixed differences
+        temp_fixed <- fixed.differences(sp_gtype, count.indels = F,bases = c("a", "c", "g", "t"))$num.fixed[,3]
+        temp_fixed_period <- fixed.differences(sp_gtype_period, count.indels = F,bases = c("a", "c", "g", "t"))$num.fixed[,3]
+        #Nucleotide divergence
+        temp_nuc_divergence_all <- nucleotide.divergence(sp_gtype)
+        temp_nuc_divergence_period <- nucleotide.divergence(sp_gtype_period)
+        temp_nuc_divergence <- temp_nuc_divergence_all$between$mean
+        #Nei's DA
+        temp_nei_DA <- temp_nuc_divergence_all$between$dA
+        #Shared Haplotypes
+        temp_shared <- shared.haps(sp_gtype)$shared.haps
+}
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
