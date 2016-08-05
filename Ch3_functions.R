@@ -1,94 +1,376 @@
-ch3_seq_sampling(Dataset2)
-### Sequence sampling per time period for all the species in Database
-ch3_seq_sampling <- function(Dataset){
-Species <- unique(Dataset$Species)
-Bins <- c(15000, 25000, 50000)
-seqs_per_bin <- as.data.frame(matrix(data=as.numeric(), nrow = length(Species), ncol = length(Bins)))
-colnames(seqs_per_bin) <- c("post-LGM", "LGM", "pre-LGM")
-row.names(seqs_per_bin) <- Species
-for(sp in seq_along(Species)){
-        Dataset_sp <- Dataset[which(Dataset$Species == Species[sp] & nchar(Dataset$Sequence) > 0),]
-        if (dim(Dataset_sp)[1] > 0){
-                lower_bound <- 0
-                for (bin in seq_along(Bins)){
-                        seqs_per_bin[sp,bin]  <- sum(Dataset_sp$Mean_Age > lower_bound & Dataset_sp$Mean_Age <= Bins[bin])
-                        lower_bound <- Bins[bin]       
-                }
-        }else{
-                seqs_per_bin[sp,] <- NA
-        }      
-}
-seqs_per_bin <- na.omit(seqs_per_bin)
-### create a z matrix from the x,y matrix
-seqs_per_bin_category <- seqs_per_bin[]
-seqs_per_bin_category[seqs_per_bin_category  == 0] <- -1
-seqs_per_bin_category[seqs_per_bin_category  >0 & seqs_per_bin_category <= 9] <- -2
-seqs_per_bin_category[seqs_per_bin_category  >=10 & seqs_per_bin_category <= 20] <- -3
-seqs_per_bin_category[seqs_per_bin_category  >21 ] <- -4
-
-### plot
-par(mar=c(6,10,1,5))
-image(t(as.matrix(seqs_per_bin_category)), col=rev(c("#FFFFFF", "#A8A8A8", "#4A4A4A", "#050505")), xaxs = "i", axes=F, xlim=c(-0.2,1.5))
-#abline(v=1.4/Bins, col="#FFFFFF")
-#unit_x <- 1/length(Bins)
-#min_x <- unit_x/2
-#axis(1, at = seq(0-min_x,(1+min_x + (unit_x)), by= 1/length(Bins[-c(1,2)])), labels = Bins, las=2)
-mtext(colnames(seqs_per_bin), side=1, at=c(0,0.5,1), line=1.5)
-#strsplit(row.names(seqs_per_bin_category), split="_")
-mtext(row.names(seqs_per_bin_category), side=2, at=seq(0,1, by=1/length(row.names(seqs_per_bin_category)[-1])), las=2, cex=0.7)
-abline(h=seq(0,1, by=1/length(row.names(seqs_per_bin_category)[-1]))+(1/length(row.names(seqs_per_bin_category)[-1])/2), col="#FFFFFF", lwd=2)
-legend(x=0.5, y=1, legend = c(" 0", " 0< n <10", "10< n <21", "<21"), bty = "n", fill =c("#FFFFFF", "#A8A8A8", "#4A4A4A", "#050505"), col =c("#FFFFFF", "#A8A8A8", "#4A4A4A", "#050505"))
-}
-### Create and save a dataframe for further Ch3 analyses
-        ### Import paleobiomes
-        ### Biomes using Bio4_CO2
-        setwd("/Users/afr/Desktop/PhD/Thesis/Chapter3/Ch3/Ch3_data/Bio50k/")
-        Bio <- stack(dir())
-        ### Biomes using Koppen
-        setwd("/Users/afr/Desktop/PhD/Thesis/Chapter3/Ch3/Ch3_data/Kop50k/")
-        Kop <- stack(dir())
+### Import paleobiomes
+### Biomes using Bio4_CO2 and Koppen
+setwd("/Users/afr/Desktop/3rd_chapter/Ch3_data/Bio50k/")
+Bio <- stack(dir())
+### Biomes using Koppen
+setwd("/Users/afr/Desktop/3rd_chapter/Ch3_data/Kop50k/")
+Kop <- stack(dir())
+#### The function: Start
 ch3_data.frame <- function(Dataset, Bio, Kop){
-require(raster)
-require(rgdal)
-temp_hap_DB <- DATABASE[nchar(DATABASE$Sequence) > 1,]
-temp_points_hap_DB <- as.data.frame(matrix(nrow=nrow(temp_hap_DB), ncol=10))
-colnames(temp_points_hap_DB) <- c("Vspecies[sp]","Longitude", "Latitude", "Time_sample", "Time_bin", "Layer", "Sequence","Bio4","Kopp", "Haplotype")
-Vlayer <- c(seq(0, 21000,  by=1000), seq(22000, 50000, by=2000))
-for (row in seq_along(temp_hap_DB[,1])){
-        temp_points_hap_DB[row,c(1,2,3,4,5,6,7)] <- c(temp_hap_DB$Species[row], 
-                                                temp_hap_DB$Longitude[row],
-                                                temp_hap_DB$Latitude[row],
-                                                temp_hap_DB$Mean_Age[row],
-                                                min(Vlayer[which(Vlayer > temp_hap_DB$Mean_Age[row])]),
-                                                min(which(Vlayer > temp_hap_DB$Mean_Age[row])),
-                                                temp_hap_DB$Sequence[row])
-                temp_points_hap_DB[row,8]<- extract(Bio, layer=as.numeric(temp_points_hap_DB[row,6]), nl=1, y=matrix(as.numeric( temp_points_hap_DB[row,c(2,3)]), nrow=1, ncol=2))
-                temp_points_hap_DB[row,9]<- extract(Kop, layer=as.numeric(temp_points_hap_DB[row,6]), nl=1, y=matrix(as.numeric( temp_points_hap_DB[row,c(2,3)]), nrow=1, ncol=2))
+        require(raster)
+        require(rgdal)
+        temp_hap_DB <- Dataset
+        temp_points_hap_DB <- as.data.frame(matrix(nrow=nrow(temp_hap_DB), ncol=10))
+        colnames(temp_points_hap_DB) <- c("Species","Longitude", "Latitude", "Time_sample", "Time_bin", "Layer", "Sequence","Bio4","Kopp", "Haplotype")
+        Vlayer <- c(seq(0, 21000,  by=1000), seq(22000, 50000, by=2000))
+        for (row in seq_along(temp_hap_DB[,1])){
+                temp_points_hap_DB[row,c(1,2,3,4,5,6,7)] <- c(temp_hap_DB$Species[row], 
+                                                              temp_hap_DB$Longitude[row],
+                                                              temp_hap_DB$Latitude[row],
+                                                              temp_hap_DB$Mean_Age[row],
+                                                              min(Vlayer[which(Vlayer > temp_hap_DB$Mean_Age[row])]),
+                                                              min(which(Vlayer > temp_hap_DB$Mean_Age[row])),
+                                                              temp_hap_DB$Sequence[row])
+        }
+        for (layers in seq_along(unique(temp_points_hap_DB$Layer))){
+                Vlayers <- sort(as.numeric(unique(temp_points_hap_DB$Layer)))
+                Vnrows <- sum(as.numeric(temp_points_hap_DB$Layer) == Vlayers[layers])
+                y  <- matrix(as.numeric(), ncol=2, nrow = Vnrows)
+                y[,1] <- as.numeric(temp_points_hap_DB[which(as.numeric(temp_points_hap_DB$Layer) == Vlayers[layers]),2])
+                y[,2] <- as.numeric(temp_points_hap_DB[which(as.numeric(temp_points_hap_DB$Layer) == Vlayers[layers]),3])
+                temp_points_hap_DB[which(as.numeric(temp_points_hap_DB$Layer) == Vlayers[layers]),8]<- extract(Bio, layer=Vlayers[layers], nl=1, y)
+                temp_points_hap_DB[which(as.numeric(temp_points_hap_DB$Layer) == Vlayers[layers]),9]<- extract(Kop, layer=Vlayers[layers], nl=1, y)
+        }
+        return(temp_points_hap_DB)
+}
+#### The function: End
+ch3_seq_data_frame <- ch3_data.frame(ch3_database, Bio = Bio, Kop = Kop)
+### SAFETY POINT >>> save the data frame to not run the script again and make a copy in the R environment
+ch3_seq_data_frame <- ch3_seq_data_frame[-which(is.na(ch3_seq_data_frame$Kopp)),]
+setwd("/Users/afr/Desktop/3rd_chapter/Ch3_results/")
+write.table(ch3_data_frame, file="all_sp_points.txt", sep = "\t")
+### remove rows with NA values in Bio4 or Kopp
+ch3_seq_data_frame <- ch3_seq_data_frame[-which(is.na(ch3_seq_data_frame$Bio4)),]
+### replace -1000 values in Bio4 by 0
+ch3_seq_data_frame$Bio4[which(ch3_seq_data_frame$Bio4 == -1000)] <- 0
+### Subsetting the data in time periods (preLGM, LGM, posLGM) and in seq anf fossil
+ch3_seq_biome.barplot <- function(ch3_data_frame, Bio, Kop){
+        for (species in seq_along(unique(ch3_data_frame$Species))){
+                Vspecies <- unique(ch3_data_frame$Species)
+                temp_all_sp <- ch3_data_frame[ch3_data_frame$Species == Vspecies[species],]
+                ### subset sequences and fossils
+                temp_seq_sp <- temp_all_sp[which(nchar(temp_all_sp$Sequence) > 1), ]
+                temp_fossil_sp <- temp_all_sp[which(nchar(temp_all_sp$Sequence) < 1), ]
+                ### subset per time bin
+                temp_seq_sp_preLGM <- temp_seq_sp[temp_seq_sp$Time_bin >= 25000,]
+                temp_seq_sp_LGM <- temp_seq_sp[temp_seq_sp$Time_bin < 25000 & temp_seq_sp$Time_bin >= 15000,]
+                temp_seq_sp_posLGM <- temp_seq_sp[temp_seq_sp$Time_bin < 15000,]
+                temp_fossil_sp_preLGM <- temp_fossil_sp[temp_fossil_sp$Time_bin >= 25000,]
+                temp_fossil_sp_LGM <- temp_fossil_sp[temp_fossil_sp$Time_bin < 25000 & temp_fossil_sp$Time_bin >= 15000,]
+                temp_fossil_sp_posLGM <- temp_fossil_sp[temp_fossil_sp$Time_bin < 15000,] 
+                ### Histograms for the biomes
+                Bio_min_limit <- min(temp_all_sp$Bio4)
+                Bio_max_limit <- max(temp_all_sp$Bio4)
+                Kop_min_limit <- min(temp_all_sp$Kopp)
+                Kop_max_limit <- max(temp_all_sp$Kopp)
+                Bio_seq_preLGM <- temp_seq_sp_preLGM$Bio4
+                Kop_seq_preLGM <- temp_seq_sp_preLGM$Kopp
+                hBio_seq_preLGM <- hist(Bio_seq_preLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                hKop_seq_preLGM <- hist(Kop_seq_preLGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
                 
+                Bio_fossil_preLGM <- temp_fossil_sp_preLGM$Bio4
+                Kop_fossil_preLGM <- temp_fossil_sp_preLGM$Kopp
+                hBio_fossil_preLGM <- hist(Bio_fossil_preLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                hKop_fossil_preLGM <- hist(Kop_fossil_preLGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
+                
+                Bio_seq_LGM <- temp_seq_sp_LGM$Bio4
+                Kop_seq_LGM <- temp_seq_sp_LGM$Kopp
+                hBio_seq_LGM <- hist(Bio_seq_LGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                hKop_seq_LGM <- hist(Kop_seq_LGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
+                
+                Bio_fossil_LGM <- temp_fossil_sp_LGM$Bio4
+                Kop_fossil_LGM <- temp_fossil_sp_LGM$Kopp
+                hBio_fossil_LGM <- hist(Bio_fossil_LGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                hKop_fossil_LGM <- hist(Kop_fossil_LGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
+                
+                Bio_seq_posLGM <- temp_seq_sp_posLGM$Bio4
+                Kop_seq_posLGM <- temp_seq_sp_posLGM$Kopp
+                hBio_seq_posLGM <- hist(Bio_seq_posLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                hKop_seq_posLGM <- hist(Kop_seq_posLGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
+                
+                Bio_seq_posLGM <- temp_seq_sp_posLGM$Bio4
+                Kop_seq_posLGM <- temp_seq_sp_posLGM$Kopp
+                hBio_seq_posLGM <- hist(Bio_seq_posLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                hKop_seq_posLGM <- hist(Kop_seq_posLGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
+                
+                Bio_fossil_posLGM <- temp_fossil_sp_posLGM$Bio4
+                Kop_fossil_posLGM <- temp_fossil_sp_posLGM$Kopp
+                hBio_fossil_posLGM <- hist(Bio_fossil_posLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                hKop_fossil_posLGM <- hist(Kop_fossil_posLGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
+                
+                ### Histograms (density) for the region for each period (preLGM, LGM, posLGM)
+                e <- extent(-180,180,30, 90)
+                Bio_Holartic <- crop(Bio, e)
+                Bio_Holartic_preLGM <- Bio_Holartic[[seq(37,25, by=-1)]]
+                VBio_Holartic_preLGM <- values(Bio_Holartic_preLGM)
+                VBio_Holartic_preLGM <- VBio_Holartic_preLGM[-which(VBio_Holartic_preLGM == -1000)]
+                Bio_density_preLGM <- density(VBio_Holartic_preLGM, from=3, to=Bio_max_limit+1)
+                
+                Bio_Holartic_LGM <- Bio_Holartic[[seq(24,16, by=-1)]]
+                VBio_Holartic_LGM <- values(Bio_Holartic_LGM)
+                VBio_Holartic_LGM <- VBio_Holartic_LGM[-which(VBio_Holartic_LGM == -1000)]
+                Bio_density_LGM <- density(VBio_Holartic_LGM, from=1, to=Bio_max_limit+1)
+                
+                Bio_Holartic_posLGM <- Bio_Holartic[[seq(15,1, by=-1)]]
+                VBio_Holartic_posLGM <- values(Bio_Holartic_posLGM)
+                VBio_Holartic_posLGM <- VBio_Holartic_posLGM[-which(VBio_Holartic_posLGM == -1000)]
+                Bio_density_posLGM <- density(VBio_Holartic_posLGM, from=1, to=Bio_max_limit+1)
+                
+                Kop_Holartic <- crop(Kop, e)
+                Kop_Holartic_preLGM <- Kop_Holartic[[seq(37,25, by=-1)]]
+                VKop_Holartic_preLGM <- values(Kop_Holartic_preLGM)
+                VKop_Holartic_preLGM <- VKop_Holartic_preLGM[-which(VKop_Holartic_preLGM == 0)]
+                Kop_density_preLGM <- density(VKop_Holartic_preLGM, from=1, to=Kop_max_limit+1)
+                
+                Kop_Holartic_LGM <- Kop_Holartic[[seq(24,16, by=-1)]]
+                VKop_Holartic_LGM <- values(Kop_Holartic_LGM)
+                VKop_Holartic_LGM <- VKop_Holartic_LGM[-which(VKop_Holartic_LGM == 0)]
+                Kop_density_LGM <- density(VKop_Holartic_LGM, from=1, to=Kop_max_limit+1)
+                
+                Kop_Holartic_posLGM <- Kop_Holartic[[seq(15,1, by=-1)]]
+                VKop_Holartic_posLGM <- values(Kop_Holartic_posLGM)
+                VKop_Holartic_posLGM <- VKop_Holartic_posLGM[-which(VKop_Holartic_posLGM == 0)]
+                Kop_density_posLGM <- density(VKop_Holartic_posLGM, from=1, to=Kop_max_limit+1)
+                
+                ### Plotting
+                setwd("/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_figures/Ch3_seq_fossil_biome/")
+                sp <- paste(substr(unlist(strsplit(Vspecies[species], split="_")), start = 1, stop=1), collapse = "")  
+                pdf(paste(sp, "_seq_fossil_biomes"), paper = "a4")
+                par(mar=c(2,0,0,0))
+                Layout <- layout(matrix(rbind(c(0,0,0,0,0,0,0), c(0,5,0,3,0,1,0), c(0,0,0,0,0,0,0), c(0,6,0,4,0,2,0), c(0,0,0,0,0,0,0)),ncol=7, nrow=5),
+                                 widths =c(4,10,1,10,1,10,4), heights = c(4,16,3,16,2))
+                max_bio_pre <- max(c(max(hBio_fossil_preLGM$counts), max(hBio_seq_preLGM$counts)))
+                plot(NULL, type = "n", xlim = c(0, max_bio_pre+(max_bio_pre/30)), ylim = c(min(hBio_fossil_preLGM$breaks), max(hBio_fossil_preLGM$breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i")
+                rect(0, hBio_fossil_preLGM$breaks[1:(length(hBio_fossil_preLGM$breaks) - 1)], hBio_fossil_preLGM$counts, hBio_fossil_preLGM$breaks[2:length(hBio_fossil_preLGM$breaks)], col="#CDAA7D", border="white", lwd=0.5)
+                rect(0, hBio_seq_preLGM$breaks[1:(length(hBio_seq_preLGM$breaks) - 1)], hBio_seq_preLGM$counts, hBio_seq_preLGM$breaks[2:length(hBio_seq_preLGM$breaks)], col="#8B7355", border = "white", lwd=0.5)
+                axis(side=1)
+                par(new=T)
+                plot(y=Bio_density_preLGM$x, x=Bio_density_preLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,27))
+                axis(side = 3)
+                
+                max_kop_pre <- max(c(max(hKop_fossil_preLGM$counts), max(hKop_seq_preLGM$counts)))
+                plot(NULL, type = "n", xlim = c(0, max_kop_pre+(max_kop_pre/30)), ylim = c(min(hKop_fossil_preLGM$breaks), max(hKop_fossil_preLGM$breaks)+1), axes=FALSE, frame=T, xaxs="i", yaxs="i")
+                rect(0, hKop_fossil_preLGM$breaks[1:(length(hKop_fossil_preLGM$breaks) - 1)], hKop_fossil_preLGM$counts, hKop_fossil_preLGM$breaks[2:length(hKop_fossil_preLGM$breaks)], col="#CDAA7D", border="white" , lwd=0.5)
+                rect(0, hKop_seq_preLGM$breaks[1:(length(hKop_seq_preLGM$breaks) - 1)], hKop_seq_preLGM$counts, hKop_seq_preLGM$breaks[2:length(hKop_seq_preLGM$breaks)], col="#8B7355", border ="white", lwd=0.5 )
+                axis(side=1)
+                mtext("Pre-LGM", side=1, line=3, cex=1.25)
+                par(new=T)
+                plot(y=Kop_density_preLGM$x, x=Kop_density_preLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,32))
+                axis(side = 3)
+                
+                ### LGM
+                max_bio_lgm <- max(c(max(hBio_fossil_LGM$counts), max(hBio_seq_LGM$counts)))
+                plot(NULL, type = "n", xlim = c(0, max_bio_lgm+(max_bio_lgm/30)), ylim = c(min(hBio_fossil_LGM$breaks), max(hBio_fossil_LGM$breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i")
+                rect(0, hBio_fossil_LGM$breaks[1:(length(hBio_fossil_LGM$breaks) - 1)], hBio_fossil_LGM$counts, hBio_fossil_LGM$breaks[2:length(hBio_fossil_LGM$breaks)], col="#BFEFFF", border = "white", lwd=0.5)
+                rect(0, hBio_seq_LGM$breaks[1:(length(hBio_seq_LGM$breaks) - 1)], hBio_seq_LGM$counts, hBio_seq_LGM$breaks[2:length(hBio_seq_LGM$breaks)], col="#87CEFA", border = "white", lwd=0.5)
+                axis(side=1)
+                par(new=T)
+                plot(y=Bio_density_LGM$x, x=Bio_density_LGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,27))
+                axis(side = 3)
+                
+                
+                max_kop_lgm <- max(c(max(hKop_fossil_LGM$counts), max(hKop_seq_LGM$counts)))
+                plot(NULL, type = "n", xlim = c(0, max_kop_lgm+(max_kop_lgm/30)), ylim = c(min(hKop_fossil_LGM$breaks), max(hKop_fossil_LGM$breaks)+1), axes=FALSE, frame=T, xaxs="i", yaxs="i")
+                rect(0, hKop_fossil_LGM$breaks[1:(length(hKop_fossil_LGM$breaks) - 1)], hKop_fossil_LGM$counts, hKop_fossil_LGM$breaks[2:length(hKop_fossil_LGM$breaks)], col="#BFEFFF", border = "white" , lwd=0.5)
+                rect(0, hKop_seq_LGM$breaks[1:(length(hKop_seq_LGM$breaks) - 1)], hKop_seq_LGM$counts, hKop_seq_LGM$breaks[2:length(hKop_seq_LGM$breaks)], col="#87CEFA", border="white", lwd=0.5)
+                axis(side=1)
+                mtext("LGM", side=1, line=3, cex=1.25)
+                par(new=T)
+                plot(y=Kop_density_LGM$x, x=Kop_density_LGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,32))
+                axis(side = 3)
+                
+                ### posLGM
+                max_bio_poslgm <- max(c(max(hBio_fossil_posLGM$counts), max(hBio_seq_posLGM$counts)))
+                plot(NULL, type = "n", xlim = c(0, max_bio_poslgm+(max_bio_poslgm/30)), ylim = c(min(hBio_fossil_posLGM$breaks), max(hBio_fossil_posLGM$breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i")
+                rect(0, hBio_fossil_posLGM$breaks[1:(length(hBio_fossil_posLGM$breaks) - 1)], hBio_fossil_posLGM$counts, hBio_fossil_posLGM$breaks[2:length(hBio_fossil_posLGM$breaks)], col="#9ACD32", border="white", lwd=0.5)
+                rect(0, hBio_seq_posLGM$breaks[1:(length(hBio_seq_posLGM$breaks) - 1)], hBio_seq_posLGM$counts, hBio_seq_posLGM$breaks[2:length(hBio_seq_posLGM$breaks)], col="#698B22", border = "white", lwd=0.5)
+                axis(side=1)
+                mtext("Biomes Bio4 CO2", side=2, line=3, cex=1.25)
+                par(new=T)
+                plot(y=Bio_density_posLGM$x, x=Bio_density_posLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,27))
+                axis(side = 3)
+                axis(side = 2, at = seq(min(hBio_fossil_posLGM$breaks), max(hBio_fossil_posLGM$breaks)+1, by=1), las=2)
+                max_kop_poslgm <- max(c(max(hKop_fossil_posLGM$counts), max(hKop_seq_posLGM$counts)))
+                plot(NULL, type = "n", xlim = c(0, max_kop_poslgm+(max_kop_poslgm/30)), ylim = c(min(hKop_fossil_posLGM$breaks), max(hKop_fossil_posLGM$breaks)+1), axes=FALSE, frame=T, xaxs="i", yaxs="i")
+                rect(0, hKop_fossil_posLGM$breaks[1:(length(hKop_fossil_posLGM$breaks) - 1)], hKop_fossil_posLGM$counts, hKop_fossil_posLGM$breaks[2:length(hKop_fossil_posLGM$breaks)], col="#9ACD32", border ="white", lwd=0.5 )
+                rect(0, hKop_seq_posLGM$breaks[1:(length(hKop_seq_posLGM$breaks) - 1)], hKop_seq_posLGM$counts, hKop_seq_posLGM$breaks[2:length(hKop_seq_posLGM$breaks)], col="#698B22", border="white", lwd=0.5)
+                axis(side=1)
+                mtext("Pos-LGM", side=1, line=3, cex=1.25)
+                mtext("Biomes Köppen-Geiger", side=2, line=3, cex=1.25)
+                par(new=T)
+                plot(y=Kop_density_posLGM$x, x=Kop_density_posLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,32))
+                axis(side = 3)
+                axis(side = 2, at = seq(min(hKop_fossil_posLGM$breaks), max(hKop_fossil_posLGM$breaks)+1, by=1), las=2)
+                dev.off()
+        }
 }
-back_up <- temp_points_hap_DB
+ch3_seq_biome.barplot(ch3_data_frame =ch3_data_frame, Bio = Bio, Kop = Kop)
+### create fasta files from the ch3_data_frame
+setwd("/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_fasta/")
+ch3_fasta.files <- function(ch3_data_frame){
+        require(seqinr)
+        for (species in seq_along(unique(ch3_data_frame$Species))){
+                Vspecies <- unique(ch3_data_frame$Species)
+                temp_all_sp <- ch3_data_frame[ch3_data_frame$Species == Vspecies[species],]
+                temp_seq_sp <- temp_all_sp[which(nchar(temp_all_sp$Sequence) > 1), ]
+                sp <- paste(substr(unlist(strsplit(Vspecies[species], split="_")), start = 1, stop=1), collapse = "")  
+                write.fasta(as.list(temp_seq_sp$Sequence), names = paste(sp,seq(1,length.out = length(temp_points_hap_DB$Longitude)), as.numeric(temp_seq_sp$Time_bin)/1000, temp_seq_sp$Bio4, temp_seq_sp$Kopp, sep="_"), file.out = paste(sp, "_hap_bio_kop.fasta", sep = ""))
+                write.table(temp_seq_sp, file=paste(sp, "bio_kop_df.txt", sep=""), sep="\t", row.names = F)
+        }
 }
-ch3_data.frame(ch3_database, Bio = Bio, Kop = Kop)
-### save it raw
-setwd("/Users/afr/Desktop/PhD/Thesis/Chapter3/Ch3/Ch3_results/")
-write.table(temp_points_hap_DB, file="all_sp_points.txt", sep = "\t")
+ch3_fasta.files(ch3_data_frame =ch3_data_frame)
+### Function to assign haplotypes to Biomes
+"/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_fasta_clean/"
+ch3_assing.hap <- function(directory){
+        require(ape)
+        setwd(directory)
+        fasta_files <- dir(pattern = ".fasta")
+        table_files <- dir(pattern = "_df.txt")
+        for (file in seq_along(fasta_files)){
+                temp_fasta_sp <- read.dna(fasta_files[file], format = "fasta")
+                temp_ch3_df_sp <- read.table(table_files[file], stringsAsFactors = F, header = T)
+                temp_split <- strsplit(dimnames(temp_fasta_sp)[[1]], split = "_")
+                clean <- as.numeric(unlist(temp_split)[(seq(1, length(dimnames(temp_fasta_sp)[[1]]), by=1)*5)-3])
+                temp_hap <- haplotype(temp_fasta_sp)
+                temp_ch3_df_sp <- temp_ch3_df_sp[clean,]
+                hap_index <- 1
+                sp <- substring(fasta_files[file], first = 1, last = 2)
+                for (hap in seq_along(attr(temp_hap, which = "index"))){
+                        samples <- attr(temp_hap, which = "index")[[hap]]
+                        temp_ch3_df_sp$Haplotype[samples] <- hap_index
+                        hap_index <- hap_index + 1
+                }
+                #compare the fasta names and the table names
+                dimnames(temp_fasta_sp)[[1]]
+                names_fasta <- paste(as.numeric(unlist(temp_split)[c((seq(1, length(dimnames(temp_fasta_sp)[[1]]), by=1)*5)-2)]),
+                                     as.numeric(unlist(temp_split)[c((seq(1, length(dimnames(temp_fasta_sp)[[1]]), by=1)*5)-1)]), 
+                                     as.numeric(unlist(temp_split)[c((seq(1, length(dimnames(temp_fasta_sp)[[1]]), by=1)*5)-0)]),
+                                     sep="_")
+                names_table <- paste(temp_ch3_df_sp$Time_bin/1000,temp_ch3_df_sp$Bio4, temp_ch3_df_sp$Kopp, sep="_")
+                if(sum(names_table == names_fasta) == length(names_fasta)){
+                        "Proceed, df and fasta match"
+                        write.table(temp_ch3_df_sp, file = paste(sp, "_hap_bio_kop.txt", sep=""), sep="\t", row.names = F)
+                }else{
+                        "Wrong df and fasta matching"
+                }
+        }
+}  
+ch3_assing.hap("/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_fasta_clean/")
+### Function for the map for all the species
+ch3_maps.plot <- function(ch3_hap_bio_kop){
+        require(stringr)
+        require(maps)
+        require(mapproj)
+        map_data <- read.table(ch3_hap_bio_kop, header=T, stringsAsFactors = F)
+        map_data$Period <- NA
+        map_data$Col_period <- NA
+        map_data$Period[which(map_data$Time_bin > 25000)] <- "pre-LGM"
+        map_data$Col_period[which(map_data$Time_bin > 25000)] <- "#8B7355"
+        map_data$Period[which(map_data$Time_bin <= 25000 & map_data$Time_bin > 15000)] <- "LGM"
+        map_data$Col_period[which(map_data$Time_bin <= 25000 & map_data$Time_bin > 15000)] <- "#87CEFA"
+        map_data$Period[which(map_data$Time_bin <= 15000)] <- "pos-LGM"
+        map_data$Col_period[which(map_data$Time_bin <= 15000)] <- "#698B22"
+        table_periods <- table(map_data$Period)
+        #table(map_data$Period)
+        species <- str_replace(unique(map_data$Species),"_", " ")
+        sp <- paste(substring(unlist(strsplit(unique(map_data$Species), split="_")), first = 1, last = 1), collapse = "")
+        pdf(paste(sp, "_ch3_maps.pdf", sep=""), paper = "a4")
+        map("world",proj="azequidist", resolution = 0.2, ylim = c(33,90), lwd=1.5, mar=c(0,2,2,2), interior = F) 
+        points(mapproject(as.numeric(map_data$Longitude), as.numeric(map_data$Latitude)), 
+               cex=1.4, bg=paste(map_data$Col_period, "99", sep=""), col=map_data$Col_period, pch=21)
+        #draw.circle(0,0,1.17, lwd=2)
+        mtext(species, side=3, line=1)
+        mtext(paste("n = ", sum(!is.na(map_data$Longitude))), line=0)
+        legend( -1.2,-0.55, pch=16, c(paste("pre-LGM", " (", table_periods[3], ")", sep = ""),
+                                      paste("LGM", " (", table_periods[1], ")", sep = ""),
+                                      paste("pos-LGM", " (", table_periods[2], ")", sep = "")),
+                col=c("#8B735599","#87CEFA99", "#698B2299"), bty = "n", pt.cex = 2, pt.lwd = 3, title="Time period", title.adj = c(0,0), y.intersp = 1, x.intersp = 0.5)
+        dev.off()
+}
+for(file in dir(pattern = "kop.txt")){
+        ch3_maps.plot(file)
+}
+### Function to plot the haplotypes per biome per time period (using Koppen)
+ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
+        require(stringr)
+        hap_bio_kop_data <- read.table(ch3_hap_bio_kop, header=T, stringsAsFactors = F)
+        species <- str_replace(unique(hap_bio_kop_data$Species), pattern = "_", replacement = " ")
+        sp <- paste(substring(unlist(strsplit(unique(hap_bio_kop_data$Species), split="_")), first = 1, last = 1), collapse = "")
+        pdf(paste(sp, "_ch3_hap_kopp.pdf", sep=""), paper = "a4")
+        par(mar=c(12,0,17,0), lwd=0.7)
+        haplo_col <- rainbow(n = length(unique(hap_bio_kop_data$Haplotype)))
+        Layout <- layout(matrix(c(0,3,0,2,0,1,0),ncol=7, nrow=1),widths =c(4,10,1,10,1,10,4), heights = c(1,1,1))
+        breaks <- seq(0, 31, by=1)
+        ### preLGM
+        hap_bio_kop_data_preLGM <- hap_bio_kop_data[which(hap_bio_kop_data$Time_bin > 25000),]
+        if(dim(hap_bio_kop_data_preLGM)[1] < 1){
+                plot(NULL, type = "n", xlim = c(0, 1), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
+        }else{
+                max_pre <- max(table(hap_bio_kop_data_preLGM$Kopp))
+                plot(NULL, type = "n", xlim = c(0, max_pre), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
+                for (biome in seq_along(unique(hap_bio_kop_data_preLGM$Kopp))){
+                        temp_hap_bio_rect <- hap_bio_kop_data_preLGM[which(hap_bio_kop_data_preLGM$Kopp == unique(hap_bio_kop_data_preLGM$Kopp)[biome]),]
+                        base <- 0
+                        for(hap_col in seq_along(temp_hap_bio_rect$Haplotype)){
+                                rect(xleft = base,xright =  base+1, ytop = temp_hap_bio_rect$Kopp[hap_col], ybottom = temp_hap_bio_rect$Kopp[hap_col]+1, col=haplo_col[temp_hap_bio_rect$Haplotype[hap_col]])
+                                base <- base+1
+                        }
+                }
+        }
+        axis(side=1)
+        mtext("Pre-LGM", side=1, line=3)
+        n_pre <- dim(hap_bio_kop_data_preLGM)[1]
+        mtext(paste("(", n_pre, ")"), side=1, line=4.5, cex=0.7)
+        
+        ### LGM
+        hap_bio_kop_data_LGM <- hap_bio_kop_data[which(hap_bio_kop_data$Time_bin <= 25000 & hap_bio_kop_data$Time_bin > 15000),]
+        if(dim(hap_bio_kop_data_LGM)[1] < 1){
+                plot(NULL, type = "n", xlim = c(0, 1), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
+        }else{
+                max_LGM <- max(table(hap_bio_kop_data_LGM$Kopp))
+                plot(NULL, type = "n", xlim = c(0, max_LGM), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
+                for (biome in seq_along(unique(hap_bio_kop_data_LGM$Kopp))){
+                        temp_hap_bio_rect <- hap_bio_kop_data_LGM[which(hap_bio_kop_data_LGM$Kopp == unique(hap_bio_kop_data_LGM$Kopp)[biome]),]
+                        base <- 0
+                        for(hap_col in seq_along(temp_hap_bio_rect$Haplotype)){
+                                rect(xleft = base,xright =  base+1, ytop = temp_hap_bio_rect$Kopp[hap_col], ybottom = temp_hap_bio_rect$Kopp[hap_col]+1, col=haplo_col[temp_hap_bio_rect$Haplotype[hap_col]])
+                                base <- base+1
+                        }
+                }
+        }
+        axis(side=1)
+        mtext("LGM", side=1, line=3)
+        n_lgm <- dim(hap_bio_kop_data_LGM)[1]
+        mtext(paste("(", n_lgm, ")"), side=1, line=4.5, cex=0.7)
+        mtext(species, side=3, line=4.5, cex=1.25)
+        ### Pos LGM
+        hap_bio_kop_data_posLGM <- hap_bio_kop_data[which(hap_bio_kop_data$Time_bin <= 15000),]
+        if(dim(hap_bio_kop_data_posLGM)[1] < 1){
+                plot(NULL, type = "n", xlim = c(0, 1), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
+        }else{
+                max_posLGM <- max(table(hap_bio_kop_data_posLGM$Kopp))
+                plot(NULL, type = "n", xlim = c(0, max_posLGM), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
+                for (biome in seq_along(unique(hap_bio_kop_data_posLGM$Kopp))){
+                        temp_hap_bio_rect <- hap_bio_kop_data_posLGM[which(hap_bio_kop_data_posLGM$Kopp == unique(hap_bio_kop_data_posLGM$Kopp)[biome]),]
+                        base <- 0
+                        for(hap_col in seq_along(temp_hap_bio_rect$Haplotype)){
+                                rect(xleft = base,xright =  base+1, ytop = temp_hap_bio_rect$Kopp[hap_col], ybottom = temp_hap_bio_rect$Kopp[hap_col]+1, col=haplo_col[temp_hap_bio_rect$Haplotype[hap_col]])
+                                base <- base+1
+                        }
+                }
+        }
+        axis(side=1)
+        mtext("Pos-LGM", side=1, line=3)
+        n_pos <- dim(hap_bio_kop_data_posLGM)[1]
+        mtext(paste("(", n_pos, ")"), side=1, line=4.5, cex=0.7)
+        axis(side=2, at=breaks, labels = breaks,las=2)
+        dev.off()
+}
+setwd("/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_fasta_clean")
+for(file in dir(pattern = "kop.txt")){
+        ch3_hap_kopp.barplot(file)
+}
+### function to estimate the fst values using biomes as categories 
 
-### Clean the data: remove NAs and -1000 values
-### IMPORTANT SAFETY POINT backup_hap <- temp_points_hap_DB
-### remove rows with no coordinates
-if(sum(is.na(temp_points_hap_DB$Longitude)) > 0){
-        temp_points_hap_DB <- temp_points_hap_DB[-which(is.na(temp_points_hap_DB$Longitude)),]
-}
-### remove rows with Biomes equal to NA
-if(sum(temp_points_hap_DB$Bio4 == -1000) > 0 + sum(temp_points_hap_DB$kopp == 0) > 0){
-        temp_points_hap_DB <- temp_points_hap_DB[-which(temp_points_hap_DB$Biome == -1000),]
-        temp_points_hap_DB <- temp_points_hap_DB[-which(temp_points_hap_DB$kopp == 0),]
-}
-if(sum(temp_points_hap_DB$Time_bin == "Inf") > 0){
-        temp_points_hap_DB <- temp_points_hap_DB[-which(temp_points_hap_DB$Time_bin == "Inf"),]
-}
-}
 
 
-
-### Haplotype barplots per time period for all the species using either Bio4 or Koppen biomes
