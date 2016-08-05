@@ -1,4 +1,4 @@
-rm(list=ls())
+
 library(raster)
 library(rgdal)
 library(VennDiagram)
