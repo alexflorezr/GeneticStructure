@@ -425,11 +425,6 @@ setwd("/Users/afr/Desktop/Ch3_fasta_haplo_plot/")
 for(file in dir(pattern = "kop.txt")){
         ch3_hap_kopp.barplot(file)
 }
-ch3_hap_bio_kop <- "Bs_hap_bio_kop.txt"
-
-[1] "Bs_hap_bio_kop.txt" "Ca_hap_bio_kop.txt" "Ce_hap_bio_kop.txt" "Dt_hap_bio_kop.txt" "Ec_hap_bio_kop.txt"
-[6] "Mg_hap_bio_kop.txt" "Mp_hap_bio_kop.txt" "Om_hap_bio_kop.txt" "Pl_hap_bio_kop.txt" "Rt_hap_bio_kop.txt"
-[11] "St_hap_bio_kop.txt" "Ua_hap_bio_kop.txt" "Vl_hap_bio_kop.txt" "Vv_hap_bio_kop.txt"
 ### function to estimate the fst among time periods
 ch3_periods.fst <- function(directory){
         data_files <- dir(pattern = "df.txt")
