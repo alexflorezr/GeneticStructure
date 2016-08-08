@@ -316,25 +316,53 @@ ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
         sp <- paste(substring(unlist(strsplit(unique(hap_bio_kop_data$Species), split="_")), first = 1, last = 1), collapse = "")
         pdf(paste(sp, "_ch3_hap_kopp.pdf", sep=""), paper = "a4")
         par(mar=c(12,0,17,0), lwd=0.7)
-        haplo_col <- rainbow(n = length(unique(hap_bio_kop_data$Haplotype)))
+        Haplo_col_period <- as.data.frame(matrix(nrow = dim(hap_bio_kop_data)[1], ncol=4))
+        colnames(Haplo_col_period) <- c("Haplotype", "Time_bin", "Haplo_color", "color_name")
+        Haplo_col_period$Haplotype  <-  hap_bio_kop_data$Haplotype
+        Haplo_col_period$Time_bin <- hap_bio_kop_data$Time_bin
+        Haplo_col_period <- Haplo_col_period[order(Haplo_col_period$Time_bin, decreasing = T),]
+        duplicated_haplo <- duplicated(Haplo_col_period$Haplotype)
+        Haplo_col_period <- Haplo_col_period[-which(duplicated_haplo),]
+        Haplo_col_period_preLGM <- Haplo_col_period[which(Haplo_col_period$Time_bin > 25000),]
+        Haplo_col_period_LGM <- Haplo_col_period[which(Haplo_col_period$Time_bin <= 25000 & Haplo_col_period$Time_bin > 15000),]
+        Haplo_col_period_posLGM <- Haplo_col_period[which(Haplo_col_period$Time_bin <= 15000),]
+        
+        col_pre <- rainbow(length(Haplo_col_period_preLGM$Haplotype), start = 0, end = 0.15)
+        Haplo_col_period_preLGM$Haplo_color <- col_pre
+        Haplo_col_period_preLGM$color_name <- "oranges"
+        
+        col_LGM <- rainbow(length(Haplo_col_period_LGM$Haplotype), start = 0.3, end = 0.45)
+        Haplo_col_period_LGM$Haplo_color <- col_LGM
+        Haplo_col_period_LGM$color_name <- "blues"
+        
+        col_posLGM <- rainbow(length(Haplo_col_period_posLGM$Haplotype), start = 0.6, end = 0.75)
+        Haplo_col_period_posLGM$Haplo_color <- col_posLGM
+        Haplo_col_period_posLGM$color_name <- "greens"
+        
+        to_add_colors <- rbind(Haplo_col_period_posLGM, Haplo_col_period_LGM, Haplo_col_period_preLGM)
+        hap_bio_kop_data$hap_colors <- to_add_colors$Haplo_color[match(hap_bio_kop_data$Haplotype, to_add_colors$Haplotype)]
+        hap_bio_kop_data$name_colors  <- to_add_colors$color_name[match(hap_bio_kop_data$Haplotype, to_add_colors$Haplotype)]
         Layout <- layout(matrix(c(0,3,0,2,0,1,0),ncol=7, nrow=1),widths =c(4,10,1,10,1,10,4), heights = c(1,1,1))
         breaks <- seq(0, 31, by=1)
         ### preLGM
         hap_bio_kop_data_preLGM <- hap_bio_kop_data[which(hap_bio_kop_data$Time_bin > 25000),]
         if(dim(hap_bio_kop_data_preLGM)[1] < 1){
-                plot(NULL, type = "n", xlim = c(0, 1), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
+                plot(NULL, type = "n", xlim = c(0, 1), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA,ylab=NA, xaxs="i", yaxs="i", cex.lab=2)
         }else{
                 max_pre <- max(table(hap_bio_kop_data_preLGM$Kopp))
                 plot(NULL, type = "n", xlim = c(0, max_pre), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
+                
                 for (biome in seq_along(unique(hap_bio_kop_data_preLGM$Kopp))){
                         temp_hap_bio_rect <- hap_bio_kop_data_preLGM[which(hap_bio_kop_data_preLGM$Kopp == unique(hap_bio_kop_data_preLGM$Kopp)[biome]),]
+                        temp_hap_bio_rect <- temp_hap_bio_rect[order(temp_hap_bio_rect$hap_colors),]
                         base <- 0
                         for(hap_col in seq_along(temp_hap_bio_rect$Haplotype)){
-                                rect(xleft = base,xright =  base+1, ytop = temp_hap_bio_rect$Kopp[hap_col], ybottom = temp_hap_bio_rect$Kopp[hap_col]+1, col=haplo_col[temp_hap_bio_rect$Haplotype[hap_col]])
+                                rect(xleft = base,xright =  base+1, ytop = temp_hap_bio_rect$Kopp[hap_col], ybottom = temp_hap_bio_rect$Kopp[hap_col]+1, col=temp_hap_bio_rect$hap_colors[hap_col])
                                 base <- base+1
                         }
                 }
         }
+        abline(v = 4, lwd=0.5, lty=2)
         axis(side=1)
         mtext("Pre-LGM", side=1, line=3)
         n_pre <- dim(hap_bio_kop_data_preLGM)[1]
@@ -346,16 +374,18 @@ ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
                 plot(NULL, type = "n", xlim = c(0, 1), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
         }else{
                 max_LGM <- max(table(hap_bio_kop_data_LGM$Kopp))
-                plot(NULL, type = "n", xlim = c(0, max_LGM), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
+                plot(NULL, type = "n", xlim = c(0, max_LGM), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA,ylab=NA, xaxs="i", yaxs="i", cex.lab=2)
                 for (biome in seq_along(unique(hap_bio_kop_data_LGM$Kopp))){
                         temp_hap_bio_rect <- hap_bio_kop_data_LGM[which(hap_bio_kop_data_LGM$Kopp == unique(hap_bio_kop_data_LGM$Kopp)[biome]),]
+                        temp_hap_bio_rect <- temp_hap_bio_rect[order(temp_hap_bio_rect$hap_colors),]
                         base <- 0
                         for(hap_col in seq_along(temp_hap_bio_rect$Haplotype)){
-                                rect(xleft = base,xright =  base+1, ytop = temp_hap_bio_rect$Kopp[hap_col], ybottom = temp_hap_bio_rect$Kopp[hap_col]+1, col=haplo_col[temp_hap_bio_rect$Haplotype[hap_col]])
+                                rect(xleft = base,xright =  base+1, ytop = temp_hap_bio_rect$Kopp[hap_col], ybottom = temp_hap_bio_rect$Kopp[hap_col]+1,col=temp_hap_bio_rect$hap_colors[hap_col])
                                 base <- base+1
                         }
                 }
         }
+        abline(v = 4, lwd=0.5, lty=2)
         axis(side=1)
         mtext("LGM", side=1, line=3)
         n_lgm <- dim(hap_bio_kop_data_LGM)[1]
@@ -367,29 +397,39 @@ ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
                 plot(NULL, type = "n", xlim = c(0, 1), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
         }else{
                 max_posLGM <- max(table(hap_bio_kop_data_posLGM$Kopp))
-                plot(NULL, type = "n", xlim = c(0, max_posLGM), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
+                plot(NULL, type = "n", xlim = c(0, max_posLGM), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA,ylab=NA, xaxs="i", yaxs="i", cex.lab=2)
                 for (biome in seq_along(unique(hap_bio_kop_data_posLGM$Kopp))){
                         temp_hap_bio_rect <- hap_bio_kop_data_posLGM[which(hap_bio_kop_data_posLGM$Kopp == unique(hap_bio_kop_data_posLGM$Kopp)[biome]),]
+                        temp_hap_bio_rect <- temp_hap_bio_rect[order(temp_hap_bio_rect$hap_colors),]
                         base <- 0
                         for(hap_col in seq_along(temp_hap_bio_rect$Haplotype)){
-                                rect(xleft = base,xright =  base+1, ytop = temp_hap_bio_rect$Kopp[hap_col], ybottom = temp_hap_bio_rect$Kopp[hap_col]+1, col=haplo_col[temp_hap_bio_rect$Haplotype[hap_col]])
+                                rect(xleft = base,xright =  base+1, ytop = temp_hap_bio_rect$Kopp[hap_col], ybottom = temp_hap_bio_rect$Kopp[hap_col]+1, col=temp_hap_bio_rect$hap_colors[hap_col])
                                 base <- base+1
                         }
                 }
         }
+        abline(v = 4, lwd=0.5, lty=2)
         axis(side=1)
         mtext("Pos-LGM", side=1, line=3)
         n_pos <- dim(hap_bio_kop_data_posLGM)[1]
         mtext(paste("(", n_pos, ")"), side=1, line=4.5, cex=0.7)
         axis(side=2, at=breaks, labels = breaks,las=2)
         dev.off()
-}
+
+        
+        
+        
+        }
 #### The function: Start
-setwd("/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_fasta_clean")
+setwd("/Users/afr/Desktop/Ch3_fasta_haplo_plot/")
 for(file in dir(pattern = "kop.txt")){
         ch3_hap_kopp.barplot(file)
 }
+ch3_hap_bio_kop <- "Bs_hap_bio_kop.txt"
 
+[1] "Bs_hap_bio_kop.txt" "Ca_hap_bio_kop.txt" "Ce_hap_bio_kop.txt" "Dt_hap_bio_kop.txt" "Ec_hap_bio_kop.txt"
+[6] "Mg_hap_bio_kop.txt" "Mp_hap_bio_kop.txt" "Om_hap_bio_kop.txt" "Pl_hap_bio_kop.txt" "Rt_hap_bio_kop.txt"
+[11] "St_hap_bio_kop.txt" "Ua_hap_bio_kop.txt" "Vl_hap_bio_kop.txt" "Vv_hap_bio_kop.txt"
 ### function to estimate the fst among time periods
 ch3_periods.fst <- function(directory){
         data_files <- dir(pattern = "df.txt")
