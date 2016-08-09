@@ -327,17 +327,20 @@ ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
         Haplo_col_period_LGM <- Haplo_col_period[which(Haplo_col_period$Time_bin <= 25000 & Haplo_col_period$Time_bin > 15000),]
         Haplo_col_period_posLGM <- Haplo_col_period[which(Haplo_col_period$Time_bin <= 15000),]
         
-        col_pre <- rainbow(length(Haplo_col_period_preLGM$Haplotype), start = 0, end = 0.15)
+        #col_pre <- rainbow(length(Haplo_col_period_preLGM$Haplotype), start = 0.3, end = 0.45)
+        col_pre <- colorRampPalette(c("green4", "lightgreen"))(length(Haplo_col_period_preLGM$Haplotype))
         Haplo_col_period_preLGM$Haplo_color <- col_pre
-        Haplo_col_period_preLGM$color_name <- "oranges"
+        Haplo_col_period_preLGM$color_name <- "greens"
         
-        col_LGM <- rainbow(length(Haplo_col_period_LGM$Haplotype), start = 0.3, end = 0.45)
+        #col_LGM <- rainbow(length(Haplo_col_period_LGM$Haplotype), start = 0.5, end = 0.6)
+        col_LGM <- colorRampPalette(c("dodgerblue3", "lightskyblue"))(length(Haplo_col_period_LGM$Haplotype))
         Haplo_col_period_LGM$Haplo_color <- col_LGM
         Haplo_col_period_LGM$color_name <- "blues"
         
-        col_posLGM <- rainbow(length(Haplo_col_period_posLGM$Haplotype), start = 0.6, end = 0.75)
+        #col_posLGM <- rainbow(length(Haplo_col_period_posLGM$Haplotype), start = 0, end = 0.17)
+        col_posLGM <- colorRampPalette(c("darkorange4", "darkorange"))(length(Haplo_col_period_posLGM$Haplotype))
         Haplo_col_period_posLGM$Haplo_color <- col_posLGM
-        Haplo_col_period_posLGM$color_name <- "greens"
+        Haplo_col_period_posLGM$color_name <- "oranges"
         
         to_add_colors <- rbind(Haplo_col_period_posLGM, Haplo_col_period_LGM, Haplo_col_period_preLGM)
         hap_bio_kop_data$hap_colors <- to_add_colors$Haplo_color[match(hap_bio_kop_data$Haplotype, to_add_colors$Haplotype)]
@@ -498,74 +501,39 @@ ch3_periods.fst <- function(directory){
 }
 ch3_periods.fst("/Users/afr/Desktop/Ch3_fst_period_data/")
 
-
-
-
-
-
-
-### function to estimate the fst values using biomes as categories 
-ch3_kopp_lower.fst <- function(){
-Periods<- c("pre_LGM", "LGM", "pos_LGM")
-temp_sp_kop_data <- read.table("Bs_bio_kop_df.txt", header=T, stringsAsFactors = F)
-temp_sp_kop_data$Period[which(temp_sp_kop_data$Time_bin > 25000)] <- Periods[1]
-temp_sp_kop_data$Period[which(temp_sp_kop_data$Time_bin <= 25000 & temp_sp_kop_data$Time_bin > 15000)] <- Periods[2]
-temp_sp_kop_data$Period[which(temp_sp_kop_data$Time_bin <= 15000)] <- Periods[3]
-### temp_align_clean <- read.fasta("Bs_align_clean.fasta")
-temp_align_clean  <- read.dna("Bs_align_clean.fasta", format = "fasta", as.character = FALSE, as.matrix=NULL)
-temp_sp_kop_data <- temp_sp_kop_data[as.numeric(unlist(temp_split)[c((seq(1, length(labels(temp_align_clean)), by=1) *5)-3)]),]
-temp_sp_kop_data$UniqueInd <- labels(temp_align_clean)
-sp <- strsplit("Bs_bio_kop_df.txt", split = "_")[[1]][1]
-
-for(period in seq_along(Periods)){
-        temp_fasta_stats_period <- temp_align_clean[which(temp_sp_kop_data$Period == Periods[period]),]
-        haps_period <- FindHaplo(align = temp_fasta_stats_period)
-        haps_period <- as.data.frame(haps_period)
-        colnames(haps_period) <-c("UniqueInd", "haplotype")
-        haps_period$UniqueInd <- levels(haps_period$UniqueInd)
-        temp_data_stats_period <- temp_sp_kop_data[temp_sp_kop_data$Period == Periods[period],]
-        matched <- match(haps_period$UniqueInd, temp_data_stats_period$UniqueInd)
-        temp_data_stats_period_m <- temp_data_stats_period[matched,]
-        temp_haps_time_bio_period <- cbind(temp_data_stats_period_m, haps_period)
-        ### add a column to specify the biome group
-        temp<- as.alignment(as.DNAbin(temp_fasta_stats_period))
-        sp_haps_period <-GetHaplo(align = temp_fasta_stats_period, saveFile=T, outname=paste(sp,"_Pops_",  Periods[period],".fasta", sep=""), format="fasta", seqsNames="Inf.Hap") #haps are now a DNAbin
-        sp_ghaps_period <-read.fasta(paste(sp,"_Pops_",  Periods[period],".fasta", sep="")) #imports haps as gtypes
-        sp_gtype_period <- gtypes(gen.data=data.frame(temp_haps_time_bio_period$UniqueInd,temp_haps_time_bio_period$Kopp,temp_haps_time_bio_period$haplotype),id.col=1,strata.col=2,locus.col=3,dna.seq=sp_ghaps_period)
+### function to plot phist triangles among the time periods
+ch3_periods_fst.triangles <- function(temp_out_diff_biome_pairwise, temp_out_div_biome_between){
+        require(igraph)
+        require(plotrix)
+        temp_table_diff_network <- read.table(temp_out_diff_biome_pairwise, header = T, stringsAsFactors = F )
+        temp_table_div_network <- read.table(temp_out_div_biome_between, header = T, stringsAsFactors = F )
+        species <- unique(temp_table_diff_network$sp)
+        for(sp in seq_along(species)){
+                pdf(paste(species[sp], "ch3_fst_triangles.pdf", sep=""), paper = "a4")
+                temp_table_diff_network_sp <- temp_table_diff_network[which(temp_table_diff_network$sp == species[sp]),]
+                temp_table_div_network_sp <- temp_table_div_network[which(temp_table_div_network$sp == species[sp]),]
+                time_periods <- unique(temp_table_network_sp$Periods.period.)
+                ### vertices
+                Vertices <- as.data.frame(matrix(nrow = 3, ncol=3))
+                colnames(Vertices) <- c("Time_period", "Size", "Color")
+                Vertices[1,] <- temp_table_diff_network_sp[1,c(3,5)]
+                Vertices[c(2,3),] <- temp_table_diff_network_sp[c(1,2),c(4,6)]
+                Vertices$Color <- c("#87CEFA", "#FF8C00", "#4EEE94")
+                ### edges
+                Edges <- cbind(temp_table_diff_network_sp[,c(3,4,9,10)], temp_table_div_network_sp[,5])
+                Edges$significance <- NA
+                Edges$significance[which(Edges$PHIst.p.val <= 0.05)] <- "1"
+                Edges$significance[which(Edges$PHIst.p.val > 0.05)] <- "2"
+                temp_net <- graph.data.frame(directed = F,d = Edges, vertices = Vertices)
+                V(temp_net)$size <- V(temp_net)$Size*2
+                V(temp_net)$color <- V(temp_net)$Color
+                E(temp_net)$width <- E(temp_net)$PHIst*50
+                plot(temp_net, vertex.frame.color=Vertices$Color, edge.color="black", edge.lty=as.numeric(Edges$significance),
+                     layout=layout_on_grid, vertex.label=NA)
+                mtext(species[sp], side=2, las=2, line=-3)
+                dev.off()
+                }
 }
-if (pop_diff == TRUE){
-        temp_pop_all <- pop.diff.test(sp_gtype)
-        temp_pop_diff <-pop.diff.test(sp_gtype_period)
-        #FST
-        temp_FST <- as.vector(temp_pop_diff$overall$result[1,])
-        temp_FST_all <- as.vector(temp_pop_all$overall$result[1,])
-        #Fi-st
-        temp_phist <- as.vector(temp_pop_diff$overall$result[2,])
-        #chi squared
-        Temp_chi2 <-  as.vector(temp_pop_diff$overall$result[3,])
-        #Fixed differences
-        temp_fixed <- fixed.differences(sp_gtype, count.indels = F,bases = c("a", "c", "g", "t"))$num.fixed[,3]
-        temp_fixed_period <- fixed.differences(sp_gtype_period, count.indels = F,bases = c("a", "c", "g", "t"))$num.fixed[,3]
-        #Nucleotide divergence
-        temp_nuc_divergence_all <- nucleotide.divergence(sp_gtype)
-        temp_nuc_divergence_period <- nucleotide.divergence(sp_gtype_period)
-        temp_nuc_divergence <- temp_nuc_divergence_all$between$mean
-        #Nei's DA
-        temp_nei_DA <- temp_nuc_divergence_all$between$dA
-        #Shared Haplotypes
-        temp_shared <- shared.haps(sp_gtype)$shared.haps
-}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
+ch3_periods_fst.triangles(temp_out_diff_biome_pairwise = "ch3_diff_pairwise.txt", temp_out_div_biome_between="ch3_div_between.txt")
+temp_out_diff_biome_pairwise <- "ch3_diff_pairwise.txt"
+temp_out_div_biome_between <- "ch3_div_between.txt"
