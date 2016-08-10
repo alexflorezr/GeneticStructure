@@ -309,11 +309,23 @@ for(file in dir(pattern = "kop.txt")){
 
 ### Function to plot the haplotypes per biome per time period (using Koppen)
 #### The function: Start
-ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
+ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop, seq_fossil_bio){
         require(stringr)
+        ## Colors for biomes
+        tropical <- colorRampPalette(c("pink","#8B2323"))(4)
+        arid <- colorRampPalette(c("orange", "orange4"))(4)
+        warm <- colorRampPalette(c("#90EE90", "darkgreen"))(9)
+        snow <- colorRampPalette(c("midnightblue","#1C86EE", "skyblue1", "#AEEEEE", "#6C7B8B"))(12)
+        polar <- colorRampPalette(c("thistle", "thistle4"))(2) 
+        bio_colors <- c("white", tropical, arid, warm, snow, polar)
+        bio_names <- c("None","Af" ,"Am" ,"As" ,"Aw" ,"BWk" ,"BWh" ,"BSk" ,"BSh" ,"Cfa" ,"Cfb" ,"Cfc" ,"Csa" ,"Csb" ,"Csc" ,"Cwa" ,"Cwb" ,"Cwc" ,"Dfa" ,"Dfb" ,"Dfc" ,"Dfd" ,"Dsa" ,"Dsb" ,"Dsc" ,"Dsd" ,"Dwa" ,"Dwb" ,"Dwc" ,"Dwd" ,"EF" ,"ET")
+        ### time periods
         hap_bio_kop_data <- read.table(ch3_hap_bio_kop, header=T, stringsAsFactors = F)
+        seq_fossil_bio_data <- read.table(seq_fossil_bio, header=T, stringsAsFactors = F)
         species <- str_replace(unique(hap_bio_kop_data$Species), pattern = "_", replacement = " ")
         sp <- paste(substring(unlist(strsplit(unique(hap_bio_kop_data$Species), split="_")), first = 1, last = 1), collapse = "")
+        seq_fossil_bio_data_sp <- seq_fossil_bio_data[seq_fossil_bio_data$Species == unique(hap_bio_kop_data$Species),]
+        seq_fossil_bio_data_sp <- seq_fossil_bio_data_sp[which(nchar(seq_fossil_bio_data_sp$Sequence) < 1),]
         pdf(paste(sp, "_ch3_hap_kopp.pdf", sep=""), paper = "a4")
         par(mar=c(12,0,17,0), lwd=0.7)
         Haplo_col_period <- as.data.frame(matrix(nrow = dim(hap_bio_kop_data)[1], ncol=4))
@@ -345,10 +357,12 @@ ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
         to_add_colors <- rbind(Haplo_col_period_posLGM, Haplo_col_period_LGM, Haplo_col_period_preLGM)
         hap_bio_kop_data$hap_colors <- to_add_colors$Haplo_color[match(hap_bio_kop_data$Haplotype, to_add_colors$Haplotype)]
         hap_bio_kop_data$name_colors  <- to_add_colors$color_name[match(hap_bio_kop_data$Haplotype, to_add_colors$Haplotype)]
-        Layout <- layout(matrix(c(0,3,0,2,0,1,0),ncol=7, nrow=1),widths =c(4,10,1,10,1,10,4), heights = c(1,1,1))
+        Layout <- layout(matrix(c(5,4,0,3,0,2,0,1,0),ncol=9, nrow=1),widths =c(3,2,0.3,10,1,10,1,10,3), heights = c(1,1,1))
+        #layout.show(Layout)
         breaks <- seq(0, 31, by=1)
         ### preLGM
         hap_bio_kop_data_preLGM <- hap_bio_kop_data[which(hap_bio_kop_data$Time_bin > 25000),]
+        seq_fossil_bio_data_sp_preLGM <- seq_fossil_bio_data_sp[which(seq_fossil_bio_data_sp$Time_bin > 25000),]
         if(dim(hap_bio_kop_data_preLGM)[1] < 1){
                 plot(NULL, type = "n", xlim = c(0, 1), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA,ylab=NA, xaxs="i", yaxs="i", cex.lab=2)
         }else{
@@ -364,21 +378,28 @@ ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
                                 base <- base+1
                         }
                 }
-        }
+                #only fossil 
+                matched <- which(is.na(match(sort(unique(seq_fossil_bio_data_sp_preLGM$Kopp)),sort(unique(hap_bio_kop_data_preLGM$Kopp)))))
+                only_fossil <- sort(unique(seq_fossil_bio_data_sp_preLGM$Kopp))[matched]
+                for (biome_fossil in seq_along(only_fossil)){
+                        base <- 0
+                        rect(xleft = base,xright =  base+max_pre, ytop = only_fossil[biome_fossil], ybottom = only_fossil[biome_fossil]+1, col="#69696950", border = NA)
+                        }
+                }
         abline(v = 4, lwd=0.5, lty=2)
         axis(side=1)
-        mtext("Pre-LGM", side=1, line=3)
         n_pre <- dim(hap_bio_kop_data_preLGM)[1]
         mtext(paste("(", n_pre, ")"), side=1, line=4.5, cex=0.7)
         
         ### LGM
         hap_bio_kop_data_LGM <- hap_bio_kop_data[which(hap_bio_kop_data$Time_bin <= 25000 & hap_bio_kop_data$Time_bin > 15000),]
+        seq_fossil_bio_data_sp_LGM <- seq_fossil_bio_data_sp[which(seq_fossil_bio_data_sp$Time_bin <= 25000 & seq_fossil_bio_data_sp$Time_bin > 15000),]
         if(dim(hap_bio_kop_data_LGM)[1] < 1){
                 plot(NULL, type = "n", xlim = c(0, 1), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
         }else{
                 max_LGM <- max(table(hap_bio_kop_data_LGM$Kopp))
                 plot(NULL, type = "n", xlim = c(0, max_LGM), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA,ylab=NA, xaxs="i", yaxs="i", cex.lab=2)
-                for (biome in seq_along(unique(hap_bio_kop_data_LGM$Kopp))){
+                for (biome in seq_along(unique(seq_fossil_bio_data$Kopp))){
                         temp_hap_bio_rect <- hap_bio_kop_data_LGM[which(hap_bio_kop_data_LGM$Kopp == unique(hap_bio_kop_data_LGM$Kopp)[biome]),]
                         temp_hap_bio_rect <- temp_hap_bio_rect[order(temp_hap_bio_rect$hap_colors),]
                         base <- 0
@@ -387,15 +408,21 @@ ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
                                 base <- base+1
                         }
                 }
-        }
+                matched <- which(is.na(match(sort(unique(seq_fossil_bio_data_sp_LGM$Kopp)),sort(unique(hap_bio_kop_data_preLGM$Kopp)))))
+                only_fossil <- sort(unique(seq_fossil_bio_data_sp_LGM$Kopp))[matched]
+                for (biome_fossil in seq_along(only_fossil)){
+                        base <- 0
+                        rect(xleft = base,xright =  base+max_pre, ytop = only_fossil[biome_fossil], ybottom = only_fossil[biome_fossil]+1, col="#69696950", border = NA)
+                }
+                }
         abline(v = 4, lwd=0.5, lty=2)
         axis(side=1)
-        mtext("LGM", side=1, line=3)
         n_lgm <- dim(hap_bio_kop_data_LGM)[1]
         mtext(paste("(", n_lgm, ")"), side=1, line=4.5, cex=0.7)
         mtext(species, side=3, line=4.5, cex=1.25)
         ### Pos LGM
         hap_bio_kop_data_posLGM <- hap_bio_kop_data[which(hap_bio_kop_data$Time_bin <= 15000),]
+        seq_fossil_bio_data_sp_posLGM <- seq_fossil_bio_data_sp[which(seq_fossil_bio_data_sp$Time_bin <= 15000),]
         if(dim(hap_bio_kop_data_posLGM)[1] < 1){
                 plot(NULL, type = "n", xlim = c(0, 1), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i", cex.lab=2)
         }else{
@@ -410,23 +437,31 @@ ch3_hap_kopp.barplot <- function(ch3_hap_bio_kop){
                                 base <- base+1
                         }
                 }
+                matched <- which(is.na(match(sort(unique(seq_fossil_bio_data_sp_posLGM$Kopp)),sort(unique(hap_bio_kop_data_preLGM$Kopp)))))
+                only_fossil <- sort(unique(seq_fossil_bio_data_sp_posLGM$Kopp))[matched]
+                for (biome_fossil in seq_along(only_fossil)){
+                        base <- 0
+                        rect(xleft = base,xright =  base+max_pre, ytop = only_fossil[biome_fossil], ybottom = only_fossil[biome_fossil]+1, col="#69696950", border = NA)
+                }
         }
         abline(v = 4, lwd=0.5, lty=2)
         axis(side=1)
-        mtext("Pos-LGM", side=1, line=3)
         n_pos <- dim(hap_bio_kop_data_posLGM)[1]
         mtext(paste("(", n_pos, ")"), side=1, line=4.5, cex=0.7)
-        axis(side=2, at=breaks, labels = breaks,las=2)
-        dev.off()
-
-        
-        
-        
+        ### Biomes
+        plot(NULL, type = "n", xlim = c(0, max_posLGM), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA,ylab=NA, xaxs="i", yaxs="i", cex.lab=2)
+        for (bio_col in seq_along(breaks)){
+                rect(xleft = 0,xright =  base+max_posLGM, ytop = breaks[bio_col], ybottom = breaks[bio_col]+1, col=bio_colors[bio_col], border = "white")
         }
-#### The function: Start
+        axis(side=2, at = breaks+0.5, labels = bio_names, las=2)
+        dev.off()
+        }
+#### The function: End
+
+setwd("~/Desktop/PhD/Thesis/Chapter3/Ch3/Ch3_figures/Ch3_figures_data/Ch3_hap_barplots_data/")
 setwd("/Users/afr/Desktop/Ch3_fasta_haplo_plot/")
 for(file in dir(pattern = "kop.txt")){
-        ch3_hap_kopp.barplot(file)
+        ch3_hap_kopp.barplot(file, "ch3_seq_fossil_biome_df.txt")
 }
 ### function to estimate the fst among time periods
 ch3_periods.fst <- function(directory){
@@ -502,38 +537,39 @@ ch3_periods.fst <- function(directory){
 ch3_periods.fst("/Users/afr/Desktop/Ch3_fst_period_data/")
 
 ### function to plot phist triangles among the time periods
-ch3_periods_fst.triangles <- function(temp_out_diff_biome_pairwise, temp_out_div_biome_between){
+ch3_periods_fst.triangles <- function(temp_out_diff_biome_pairwise){
         require(igraph)
         require(plotrix)
         temp_table_diff_network <- read.table(temp_out_diff_biome_pairwise, header = T, stringsAsFactors = F )
-        temp_table_div_network <- read.table(temp_out_div_biome_between, header = T, stringsAsFactors = F )
         species <- unique(temp_table_diff_network$sp)
         for(sp in seq_along(species)){
                 pdf(paste(species[sp], "ch3_fst_triangles.pdf", sep=""), paper = "a4")
                 temp_table_diff_network_sp <- temp_table_diff_network[which(temp_table_diff_network$sp == species[sp]),]
-                temp_table_div_network_sp <- temp_table_div_network[which(temp_table_div_network$sp == species[sp]),]
-                time_periods <- unique(temp_table_network_sp$Periods.period.)
+                time_periods <- unique(c(temp_table_diff_network_sp$strata.1, temp_table_diff_network_sp$strata.2))
                 ### vertices
                 Vertices <- as.data.frame(matrix(nrow = 3, ncol=3))
-                colnames(Vertices) <- c("Time_period", "Size", "Color")
-                Vertices[1,] <- temp_table_diff_network_sp[1,c(3,5)]
-                Vertices[c(2,3),] <- temp_table_diff_network_sp[c(1,2),c(4,6)]
-                Vertices$Color <- c("#87CEFA", "#FF8C00", "#4EEE94")
+                colnames(Vertices) <- c("Time_period","Size", "Color")
+                Vertices$Time_period <- time_periods
+                Vertices$Size <- 2
+                #Vertices[1,] <- temp_table_diff_network_sp[1,c(3,5)]
+                #Vertices[c(2,3),] <- temp_table_diff_network_sp[c(1,2),c(4,6)]
+                Vertices$Color <- c("#87CEFA", "#FF7F24", "#228B22")
                 ### edges
-                Edges <- cbind(temp_table_diff_network_sp[,c(3,4,9,10)], temp_table_div_network_sp[,5])
+                Edges <- temp_table_diff_network_sp[,c(3,4,9,10)]
                 Edges$significance <- NA
                 Edges$significance[which(Edges$PHIst.p.val <= 0.05)] <- "1"
-                Edges$significance[which(Edges$PHIst.p.val > 0.05)] <- "2"
+                Edges$significance[which(Edges$PHIst.p.val > 0.05)] <- "3"
                 temp_net <- graph.data.frame(directed = F,d = Edges, vertices = Vertices)
-                V(temp_net)$size <- V(temp_net)$Size*2
+                V(temp_net)$size <- V(temp_net)$Size*25
                 V(temp_net)$color <- V(temp_net)$Color
                 E(temp_net)$width <- E(temp_net)$PHIst*50
                 plot(temp_net, vertex.frame.color=Vertices$Color, edge.color="black", edge.lty=as.numeric(Edges$significance),
-                     layout=layout_on_grid, vertex.label=NA)
+                     layout=layout_on_grid, vertex.label=Vertices$Time_period, vertex.label.family="Helvetica", vertex.label.color="black")
                 mtext(species[sp], side=2, las=2, line=-3)
                 dev.off()
                 }
 }
-ch3_periods_fst.triangles(temp_out_diff_biome_pairwise = "ch3_diff_pairwise.txt", temp_out_div_biome_between="ch3_div_between.txt")
+setwd("/Users/afr/Desktop/PhD/Thesis/Chapter3/Ch3/Ch3_figures/Ch3_figures_data/Ch3_phist_triangles_data")
+ch3_periods_fst.triangles(temp_out_diff_biome_pairwise = "ch3_diff_pairwise.txt")
 temp_out_diff_biome_pairwise <- "ch3_diff_pairwise.txt"
 temp_out_div_biome_between <- "ch3_div_between.txt"
