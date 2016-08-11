@@ -48,7 +48,15 @@ ch3_seq_data_frame$Bio4[which(ch3_seq_data_frame$Bio4 == -1000)] <- 0
 ### Subsetting the data in time periods (preLGM, LGM, posLGM) and in seq anf fossil
 
 #### The function: Start
-ch3_seq_biome.barplot <- function(ch3_data_frame, Bio, Kop){
+ch3_seq_biome.barplot <- function(ch3_data_frame, Kop){
+        tropical <- colorRampPalette(c("pink","#8B2323"))(4)
+        arid <- colorRampPalette(c("orange", "orange4"))(4)
+        warm <- colorRampPalette(c("#90EE90", "darkgreen"))(9)
+        snow <- colorRampPalette(c("midnightblue","#1C86EE", "skyblue1", "#AEEEEE", "#6C7B8B"))(12)
+        polar <- colorRampPalette(c("thistle", "thistle4"))(2) 
+        bio_colors <- c("white", tropical, arid, warm, snow, polar)
+        bio_names <- c("None","Af" ,"Am" ,"As" ,"Aw" ,"BWk" ,"BWh" ,"BSk" ,"BSh" ,"Cfa" ,"Cfb" ,"Cfc" ,"Csa" ,"Csb" ,"Csc" ,"Cwa" ,"Cwb" ,"Cwc" ,"Dfa" ,"Dfb" ,"Dfc" ,"Dfd" ,"Dsa" ,"Dsb" ,"Dsc" ,"Dsd" ,"Dwa" ,"Dwb" ,"Dwc" ,"Dwd" ,"EF" ,"ET")
+        
         for (species in seq_along(unique(ch3_data_frame$Species))){
                 Vspecies <- unique(ch3_data_frame$Species)
                 temp_all_sp <- ch3_data_frame[ch3_data_frame$Species == Vspecies[species],]
@@ -63,154 +71,164 @@ ch3_seq_biome.barplot <- function(ch3_data_frame, Bio, Kop){
                 temp_fossil_sp_LGM <- temp_fossil_sp[temp_fossil_sp$Time_bin < 25000 & temp_fossil_sp$Time_bin >= 15000,]
                 temp_fossil_sp_posLGM <- temp_fossil_sp[temp_fossil_sp$Time_bin < 15000,] 
                 ### Histograms for the biomes
-                Bio_min_limit <- min(temp_all_sp$Bio4)
-                Bio_max_limit <- max(temp_all_sp$Bio4)
-                Kop_min_limit <- min(temp_all_sp$Kopp)
-                Kop_max_limit <- max(temp_all_sp$Kopp)
-                Bio_seq_preLGM <- temp_seq_sp_preLGM$Bio4
+                #Bio_min_limit <- min(temp_all_sp$Bio4)
+                #Bio_max_limit <- max(temp_all_sp$Bio4)
+                Kop_min_limit <- 0
+                Kop_max_limit <- 31
+                #Bio_seq_preLGM <- temp_seq_sp_preLGM$Bio4
                 Kop_seq_preLGM <- temp_seq_sp_preLGM$Kopp
-                hBio_seq_preLGM <- hist(Bio_seq_preLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                #hBio_seq_preLGM <- hist(Bio_seq_preLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
                 hKop_seq_preLGM <- hist(Kop_seq_preLGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
                 
-                Bio_fossil_preLGM <- temp_fossil_sp_preLGM$Bio4
+                #Bio_fossil_preLGM <- temp_fossil_sp_preLGM$Bio4
                 Kop_fossil_preLGM <- temp_fossil_sp_preLGM$Kopp
-                hBio_fossil_preLGM <- hist(Bio_fossil_preLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                #hBio_fossil_preLGM <- hist(Bio_fossil_preLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
                 hKop_fossil_preLGM <- hist(Kop_fossil_preLGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
                 
-                Bio_seq_LGM <- temp_seq_sp_LGM$Bio4
+                #Bio_seq_LGM <- temp_seq_sp_LGM$Bio4
                 Kop_seq_LGM <- temp_seq_sp_LGM$Kopp
-                hBio_seq_LGM <- hist(Bio_seq_LGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                #hBio_seq_LGM <- hist(Bio_seq_LGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
                 hKop_seq_LGM <- hist(Kop_seq_LGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
                 
-                Bio_fossil_LGM <- temp_fossil_sp_LGM$Bio4
+                #Bio_fossil_LGM <- temp_fossil_sp_LGM$Bio4
                 Kop_fossil_LGM <- temp_fossil_sp_LGM$Kopp
-                hBio_fossil_LGM <- hist(Bio_fossil_LGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                #hBio_fossil_LGM <- hist(Bio_fossil_LGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
                 hKop_fossil_LGM <- hist(Kop_fossil_LGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
                 
-                Bio_seq_posLGM <- temp_seq_sp_posLGM$Bio4
+                #Bio_seq_posLGM <- temp_seq_sp_posLGM$Bio4
                 Kop_seq_posLGM <- temp_seq_sp_posLGM$Kopp
-                hBio_seq_posLGM <- hist(Bio_seq_posLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                #hBio_seq_posLGM <- hist(Bio_seq_posLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
                 hKop_seq_posLGM <- hist(Kop_seq_posLGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
                 
-                Bio_seq_posLGM <- temp_seq_sp_posLGM$Bio4
+                #Bio_seq_posLGM <- temp_seq_sp_posLGM$Bio4
                 Kop_seq_posLGM <- temp_seq_sp_posLGM$Kopp
-                hBio_seq_posLGM <- hist(Bio_seq_posLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                #hBio_seq_posLGM <- hist(Bio_seq_posLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
                 hKop_seq_posLGM <- hist(Kop_seq_posLGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
                 
-                Bio_fossil_posLGM <- temp_fossil_sp_posLGM$Bio4
+                #Bio_fossil_posLGM <- temp_fossil_sp_posLGM$Bio4
                 Kop_fossil_posLGM <- temp_fossil_sp_posLGM$Kopp
-                hBio_fossil_posLGM <- hist(Bio_fossil_posLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
+                #hBio_fossil_posLGM <- hist(Bio_fossil_posLGM, breaks=seq(Bio_min_limit, Bio_max_limit, by=1), plot=F)
                 hKop_fossil_posLGM <- hist(Kop_fossil_posLGM, breaks=seq(Kop_min_limit, Kop_max_limit, by=1), plot=F)
                 
                 ### Histograms (density) for the region for each period (preLGM, LGM, posLGM)
                 e <- extent(-180,180,30, 90)
-                Bio_Holartic <- crop(Bio, e)
-                Bio_Holartic_preLGM <- Bio_Holartic[[seq(37,25, by=-1)]]
-                VBio_Holartic_preLGM <- values(Bio_Holartic_preLGM)
-                VBio_Holartic_preLGM <- VBio_Holartic_preLGM[-which(VBio_Holartic_preLGM == -1000)]
-                Bio_density_preLGM <- density(VBio_Holartic_preLGM, from=3, to=Bio_max_limit+1)
+                #Bio_Holartic <- crop(Bio, e)
+                #Bio_Holartic_preLGM <- Bio_Holartic[[seq(37,25, by=-1)]]
+                #VBio_Holartic_preLGM <- values(Bio_Holartic_preLGM)
+                #VBio_Holartic_preLGM <- VBio_Holartic_preLGM[-which(VBio_Holartic_preLGM == -1000)]
+                #Bio_density_preLGM <- density(VBio_Holartic_preLGM, from=3, to=Bio_max_limit+1)
                 
-                Bio_Holartic_LGM <- Bio_Holartic[[seq(24,16, by=-1)]]
-                VBio_Holartic_LGM <- values(Bio_Holartic_LGM)
-                VBio_Holartic_LGM <- VBio_Holartic_LGM[-which(VBio_Holartic_LGM == -1000)]
-                Bio_density_LGM <- density(VBio_Holartic_LGM, from=1, to=Bio_max_limit+1)
+                #Bio_Holartic_LGM <- Bio_Holartic[[seq(24,16, by=-1)]]
+                #VBio_Holartic_LGM <- values(Bio_Holartic_LGM)
+                #VBio_Holartic_LGM <- VBio_Holartic_LGM[-which(VBio_Holartic_LGM == -1000)]
+                #Bio_density_LGM <- density(VBio_Holartic_LGM, from=1, to=Bio_max_limit+1)
                 
-                Bio_Holartic_posLGM <- Bio_Holartic[[seq(15,1, by=-1)]]
-                VBio_Holartic_posLGM <- values(Bio_Holartic_posLGM)
-                VBio_Holartic_posLGM <- VBio_Holartic_posLGM[-which(VBio_Holartic_posLGM == -1000)]
-                Bio_density_posLGM <- density(VBio_Holartic_posLGM, from=1, to=Bio_max_limit+1)
+                #Bio_Holartic_posLGM <- Bio_Holartic[[seq(15,1, by=-1)]]
+                #VBio_Holartic_posLGM <- values(Bio_Holartic_posLGM)
+                #VBio_Holartic_posLGM <- VBio_Holartic_posLGM[-which(VBio_Holartic_posLGM == -1000)]
+                #Bio_density_posLGM <- density(VBio_Holartic_posLGM, from=1, to=Bio_max_limit+1)
                 
                 Kop_Holartic <- crop(Kop, e)
                 Kop_Holartic_preLGM <- Kop_Holartic[[seq(37,25, by=-1)]]
                 VKop_Holartic_preLGM <- values(Kop_Holartic_preLGM)
                 VKop_Holartic_preLGM <- VKop_Holartic_preLGM[-which(VKop_Holartic_preLGM == 0)]
-                Kop_density_preLGM <- density(VKop_Holartic_preLGM, from=1, to=Kop_max_limit+1)
+                Kop_density_preLGM <- density(VKop_Holartic_preLGM, from=1, to=32)
                 
                 Kop_Holartic_LGM <- Kop_Holartic[[seq(24,16, by=-1)]]
                 VKop_Holartic_LGM <- values(Kop_Holartic_LGM)
                 VKop_Holartic_LGM <- VKop_Holartic_LGM[-which(VKop_Holartic_LGM == 0)]
-                Kop_density_LGM <- density(VKop_Holartic_LGM, from=1, to=Kop_max_limit+1)
+                Kop_density_LGM <- density(VKop_Holartic_LGM, from=1, to=32)
                 
                 Kop_Holartic_posLGM <- Kop_Holartic[[seq(15,1, by=-1)]]
                 VKop_Holartic_posLGM <- values(Kop_Holartic_posLGM)
                 VKop_Holartic_posLGM <- VKop_Holartic_posLGM[-which(VKop_Holartic_posLGM == 0)]
-                Kop_density_posLGM <- density(VKop_Holartic_posLGM, from=1, to=Kop_max_limit+1)
+                Kop_density_posLGM <- density(VKop_Holartic_posLGM, from=1, to=32)
                 
                 ### Plotting
-                setwd("/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_figures/Ch3_seq_fossil_biome/")
+                setwd("/Users/afr/Desktop/")
                 sp <- paste(substr(unlist(strsplit(Vspecies[species], split="_")), start = 1, stop=1), collapse = "")  
-                pdf(paste(sp, "_seq_fossil_biomes"), paper = "a4")
-                par(mar=c(2,0,0,0))
-                Layout <- layout(matrix(rbind(c(0,0,0,0,0,0,0), c(0,5,0,3,0,1,0), c(0,0,0,0,0,0,0), c(0,6,0,4,0,2,0), c(0,0,0,0,0,0,0)),ncol=7, nrow=5),
-                                 widths =c(4,10,1,10,1,10,4), heights = c(4,16,3,16,2))
-                max_bio_pre <- max(c(max(hBio_fossil_preLGM$counts), max(hBio_seq_preLGM$counts)))
-                plot(NULL, type = "n", xlim = c(0, max_bio_pre+(max_bio_pre/30)), ylim = c(min(hBio_fossil_preLGM$breaks), max(hBio_fossil_preLGM$breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i")
-                rect(0, hBio_fossil_preLGM$breaks[1:(length(hBio_fossil_preLGM$breaks) - 1)], hBio_fossil_preLGM$counts, hBio_fossil_preLGM$breaks[2:length(hBio_fossil_preLGM$breaks)], col="#CDAA7D", border="white", lwd=0.5)
-                rect(0, hBio_seq_preLGM$breaks[1:(length(hBio_seq_preLGM$breaks) - 1)], hBio_seq_preLGM$counts, hBio_seq_preLGM$breaks[2:length(hBio_seq_preLGM$breaks)], col="#8B7355", border = "white", lwd=0.5)
-                axis(side=1)
-                par(new=T)
-                plot(y=Bio_density_preLGM$x, x=Bio_density_preLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,27))
-                axis(side = 3)
+                pdf(paste(sp, "_seq_fossil_biomes.pdf"), paper = "a4")
+                par(mar=c(4,0,5,0))
+                Layout <- layout(matrix(c(5,4,0,3,0,2,0,1,0),ncol=9, nrow=1),widths =c(3,2,0.3,10,1,10,1,10,3), heights = c(1,1,1))
+                #max_bio_pre <- max(c(max(hBio_fossil_preLGM$counts), max(hBio_seq_preLGM$counts)))
+                #plot(NULL, type = "n", xlim = c(0, max_bio_pre+(max_bio_pre/30)), ylim = c(min(hBio_fossil_preLGM$breaks), max(hBio_fossil_preLGM$breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i")
+                #rect(0, hBio_fossil_preLGM$breaks[1:(length(hBio_fossil_preLGM$breaks) - 1)], hBio_fossil_preLGM$counts, hBio_fossil_preLGM$breaks[2:length(hBio_fossil_preLGM$breaks)], col="#CDAA7D", border="white", lwd=0.5)
+                #rect(0, hBio_seq_preLGM$breaks[1:(length(hBio_seq_preLGM$breaks) - 1)], hBio_seq_preLGM$counts, hBio_seq_preLGM$breaks[2:length(hBio_seq_preLGM$breaks)], col="#8B7355", border = "white", lwd=0.5)
+                #axis(side=1)
+                #par(new=T)
+                #plot(y=Bio_density_preLGM$x, x=Bio_density_preLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,27))
+                #axis(side = 3)
                 
                 max_kop_pre <- max(c(max(hKop_fossil_preLGM$counts), max(hKop_seq_preLGM$counts)))
-                plot(NULL, type = "n", xlim = c(0, max_kop_pre+(max_kop_pre/30)), ylim = c(min(hKop_fossil_preLGM$breaks), max(hKop_fossil_preLGM$breaks)+1), axes=FALSE, frame=T, xaxs="i", yaxs="i")
-                rect(0, hKop_fossil_preLGM$breaks[1:(length(hKop_fossil_preLGM$breaks) - 1)], hKop_fossil_preLGM$counts, hKop_fossil_preLGM$breaks[2:length(hKop_fossil_preLGM$breaks)], col="#CDAA7D", border="white" , lwd=0.5)
-                rect(0, hKop_seq_preLGM$breaks[1:(length(hKop_seq_preLGM$breaks) - 1)], hKop_seq_preLGM$counts, hKop_seq_preLGM$breaks[2:length(hKop_seq_preLGM$breaks)], col="#8B7355", border ="white", lwd=0.5 )
+                plot(NULL, type = "n", xlim = c(0, max_kop_pre+(max_kop_pre/30)), ylim = c(min(hKop_fossil_preLGM$breaks), max(hKop_fossil_preLGM$breaks)+1), axes=FALSE, frame=T, xaxs="i", yaxs="i", ylab=NA, xlab=NA)
+                rect(0, hKop_fossil_preLGM$breaks[1:(length(hKop_fossil_preLGM$breaks) - 1)], hKop_fossil_preLGM$counts, hKop_fossil_preLGM$breaks[2:length(hKop_fossil_preLGM$breaks)], col="#228B22", border="white" , lwd=0.5)
+                rect(0, hKop_seq_preLGM$breaks[1:(length(hKop_seq_preLGM$breaks) - 1)], hKop_seq_preLGM$counts, hKop_seq_preLGM$breaks[2:length(hKop_seq_preLGM$breaks)], col="#90EE90", border ="white", lwd=0.5 )
                 axis(side=1)
                 mtext("Pre-LGM", side=1, line=3, cex=1.25)
                 par(new=T)
-                plot(y=Kop_density_preLGM$x, x=Kop_density_preLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,32))
+                plot(y=Kop_density_preLGM$x, x=Kop_density_preLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,32), ylab=NA)
                 axis(side = 3)
                 
                 ### LGM
-                max_bio_lgm <- max(c(max(hBio_fossil_LGM$counts), max(hBio_seq_LGM$counts)))
-                plot(NULL, type = "n", xlim = c(0, max_bio_lgm+(max_bio_lgm/30)), ylim = c(min(hBio_fossil_LGM$breaks), max(hBio_fossil_LGM$breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i")
-                rect(0, hBio_fossil_LGM$breaks[1:(length(hBio_fossil_LGM$breaks) - 1)], hBio_fossil_LGM$counts, hBio_fossil_LGM$breaks[2:length(hBio_fossil_LGM$breaks)], col="#BFEFFF", border = "white", lwd=0.5)
-                rect(0, hBio_seq_LGM$breaks[1:(length(hBio_seq_LGM$breaks) - 1)], hBio_seq_LGM$counts, hBio_seq_LGM$breaks[2:length(hBio_seq_LGM$breaks)], col="#87CEFA", border = "white", lwd=0.5)
-                axis(side=1)
-                par(new=T)
-                plot(y=Bio_density_LGM$x, x=Bio_density_LGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,27))
-                axis(side = 3)
+                #max_bio_lgm <- max(c(max(hBio_fossil_LGM$counts), max(hBio_seq_LGM$counts)))
+                #plot(NULL, type = "n", xlim = c(0, max_bio_lgm+(max_bio_lgm/30)), ylim = c(min(hBio_fossil_LGM$breaks), max(hBio_fossil_LGM$breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i")
+                #rect(0, hBio_fossil_LGM$breaks[1:(length(hBio_fossil_LGM$breaks) - 1)], hBio_fossil_LGM$counts, hBio_fossil_LGM$breaks[2:length(hBio_fossil_LGM$breaks)], col="#BFEFFF", border = "white", lwd=0.5)
+                #rect(0, hBio_seq_LGM$breaks[1:(length(hBio_seq_LGM$breaks) - 1)], hBio_seq_LGM$counts, hBio_seq_LGM$breaks[2:length(hBio_seq_LGM$breaks)], col="#87CEFA", border = "white", lwd=0.5)
+                #axis(side=1)
+                #par(new=T)
+                #plot(y=Bio_density_LGM$x, x=Bio_density_LGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,27))
+                #axis(side = 3)
                 
                 
                 max_kop_lgm <- max(c(max(hKop_fossil_LGM$counts), max(hKop_seq_LGM$counts)))
-                plot(NULL, type = "n", xlim = c(0, max_kop_lgm+(max_kop_lgm/30)), ylim = c(min(hKop_fossil_LGM$breaks), max(hKop_fossil_LGM$breaks)+1), axes=FALSE, frame=T, xaxs="i", yaxs="i")
-                rect(0, hKop_fossil_LGM$breaks[1:(length(hKop_fossil_LGM$breaks) - 1)], hKop_fossil_LGM$counts, hKop_fossil_LGM$breaks[2:length(hKop_fossil_LGM$breaks)], col="#BFEFFF", border = "white" , lwd=0.5)
+                plot(NULL, type = "n", xlim = c(0, max_kop_lgm+(max_kop_lgm/30)), ylim = c(min(hKop_fossil_LGM$breaks), max(hKop_fossil_LGM$breaks)+1), axes=FALSE, frame=T, xaxs="i", yaxs="i", ylab=NA, xlab=NA)
+                rect(0, hKop_fossil_LGM$breaks[1:(length(hKop_fossil_LGM$breaks) - 1)], hKop_fossil_LGM$counts, hKop_fossil_LGM$breaks[2:length(hKop_fossil_LGM$breaks)], col="#009ACD", border = "white" , lwd=0.5)
                 rect(0, hKop_seq_LGM$breaks[1:(length(hKop_seq_LGM$breaks) - 1)], hKop_seq_LGM$counts, hKop_seq_LGM$breaks[2:length(hKop_seq_LGM$breaks)], col="#87CEFA", border="white", lwd=0.5)
                 axis(side=1)
                 mtext("LGM", side=1, line=3, cex=1.25)
+                mtext(str_replace(Vspecies[species], "_", " "), side=3, line=3, cex=1.25)
                 par(new=T)
                 plot(y=Kop_density_LGM$x, x=Kop_density_LGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,32))
                 axis(side = 3)
                 
                 ### posLGM
-                max_bio_poslgm <- max(c(max(hBio_fossil_posLGM$counts), max(hBio_seq_posLGM$counts)))
-                plot(NULL, type = "n", xlim = c(0, max_bio_poslgm+(max_bio_poslgm/30)), ylim = c(min(hBio_fossil_posLGM$breaks), max(hBio_fossil_posLGM$breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i")
-                rect(0, hBio_fossil_posLGM$breaks[1:(length(hBio_fossil_posLGM$breaks) - 1)], hBio_fossil_posLGM$counts, hBio_fossil_posLGM$breaks[2:length(hBio_fossil_posLGM$breaks)], col="#9ACD32", border="white", lwd=0.5)
-                rect(0, hBio_seq_posLGM$breaks[1:(length(hBio_seq_posLGM$breaks) - 1)], hBio_seq_posLGM$counts, hBio_seq_posLGM$breaks[2:length(hBio_seq_posLGM$breaks)], col="#698B22", border = "white", lwd=0.5)
-                axis(side=1)
-                mtext("Biomes Bio4 CO2", side=2, line=3, cex=1.25)
-                par(new=T)
-                plot(y=Bio_density_posLGM$x, x=Bio_density_posLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,27))
-                axis(side = 3)
-                axis(side = 2, at = seq(min(hBio_fossil_posLGM$breaks), max(hBio_fossil_posLGM$breaks)+1, by=1), las=2)
+                #max_bio_poslgm <- max(c(max(hBio_fossil_posLGM$counts), max(hBio_seq_posLGM$counts)))
+                #plot(NULL, type = "n", xlim = c(0, max_bio_poslgm+(max_bio_poslgm/30)), ylim = c(min(hBio_fossil_posLGM$breaks), max(hBio_fossil_posLGM$breaks)+1), axes=FALSE, frame=T, xlab=NA, xaxs="i", yaxs="i")
+                #rect(0, hBio_fossil_posLGM$breaks[1:(length(hBio_fossil_posLGM$breaks) - 1)], hBio_fossil_posLGM$counts, hBio_fossil_posLGM$breaks[2:length(hBio_fossil_posLGM$breaks)], col="#9ACD32", border="white", lwd=0.5)
+                #rect(0, hBio_seq_posLGM$breaks[1:(length(hBio_seq_posLGM$breaks) - 1)], hBio_seq_posLGM$counts, hBio_seq_posLGM$breaks[2:length(hBio_seq_posLGM$breaks)], col="#698B22", border = "white", lwd=0.5)
+                #axis(side=1)
+                #mtext("Biomes Bio4 CO2", side=2, line=3, cex=1.25)
+                #par(new=T)
+                #plot(y=Bio_density_posLGM$x, x=Bio_density_posLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,27))
+                #axis(side = 3)
+                #axis(side = 2, at = seq(min(hBio_fossil_posLGM$breaks), max(hBio_fossil_posLGM$breaks)+1, by=1), las=2)
+                
                 max_kop_poslgm <- max(c(max(hKop_fossil_posLGM$counts), max(hKop_seq_posLGM$counts)))
-                plot(NULL, type = "n", xlim = c(0, max_kop_poslgm+(max_kop_poslgm/30)), ylim = c(min(hKop_fossil_posLGM$breaks), max(hKop_fossil_posLGM$breaks)+1), axes=FALSE, frame=T, xaxs="i", yaxs="i")
-                rect(0, hKop_fossil_posLGM$breaks[1:(length(hKop_fossil_posLGM$breaks) - 1)], hKop_fossil_posLGM$counts, hKop_fossil_posLGM$breaks[2:length(hKop_fossil_posLGM$breaks)], col="#9ACD32", border ="white", lwd=0.5 )
-                rect(0, hKop_seq_posLGM$breaks[1:(length(hKop_seq_posLGM$breaks) - 1)], hKop_seq_posLGM$counts, hKop_seq_posLGM$breaks[2:length(hKop_seq_posLGM$breaks)], col="#698B22", border="white", lwd=0.5)
+                plot(NULL, type = "n", xlim = c(0, max_kop_poslgm+(max_kop_poslgm/30)), ylim = c(min(hKop_fossil_posLGM$breaks), max(hKop_fossil_posLGM$breaks)+1), axes=FALSE, frame=T, xaxs="i", yaxs="i", ylab=NA, xlab=NA)
+                rect(0, hKop_fossil_posLGM$breaks[1:(length(hKop_fossil_posLGM$breaks) - 1)], hKop_fossil_posLGM$counts, hKop_fossil_posLGM$breaks[2:length(hKop_fossil_posLGM$breaks)], col="#CD3700", border ="white", lwd=0.5 )
+                rect(0, hKop_seq_posLGM$breaks[1:(length(hKop_seq_posLGM$breaks) - 1)], hKop_seq_posLGM$counts, hKop_seq_posLGM$breaks[2:length(hKop_seq_posLGM$breaks)], col="#FF7F24", border="white", lwd=0.5)
                 axis(side=1)
                 mtext("Pos-LGM", side=1, line=3, cex=1.25)
-                mtext("Biomes Köppen-Geiger", side=2, line=3, cex=1.25)
+                mtext("Biomes Köppen-Geiger", side=2.5, line=5, cex=1.25)
                 par(new=T)
-                plot(y=Kop_density_posLGM$x, x=Kop_density_posLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,32))
+                plot(y=Kop_density_posLGM$x, x=Kop_density_posLGM$y, type='l', axes=F, xlab=NA, xaxs="i", yaxs="i", lwd=1, ylim=c(0,32), ylab=NA)
                 axis(side = 3)
-                axis(side = 2, at = seq(min(hKop_fossil_posLGM$breaks), max(hKop_fossil_posLGM$breaks)+1, by=1), las=2)
+
+                ### Biomes
+                plot(NULL, type = "n", xlim = c(0, max_posLGM), ylim = c(min(breaks), max(breaks)+1), axes=FALSE, frame=T, xlab=NA,ylab=NA, xaxs="i", yaxs="i", cex.lab=2)
+                for (bio_col in seq_along(breaks)){
+                        rect(xleft = 0,xright =  base+max_posLGM, ytop = breaks[bio_col], ybottom = breaks[bio_col]+1, col=bio_colors[bio_col], border = "white")
+                }
+                axis(side=2, at = breaks+0.5, labels = bio_names, las=2, hadj=0, line = -1.5, cex=0.7, tick = F)
+                
                 dev.off()
         }
 }
 #### The function: End
+ch3_seq_fossil_bio_all <- read.table(file.choose(), header = T, stringsAsFactors = F, sep = "\t")
+ch3_data_frame <- ch3_seq_fossil_bio_all
+ch3_seq_biome.barplot(ch3_data_frame =ch3_seq_fossil_bio_all, Kop = Kop)
 
-ch3_seq_biome.barplot(ch3_data_frame =ch3_data_frame, Bio = Bio, Kop = Kop)
 ### create fasta files from the ch3_data_frame
 setwd("/Users/afr/Desktop/3rd_chapter/Ch3_results/Ch3_fasta/")
 
